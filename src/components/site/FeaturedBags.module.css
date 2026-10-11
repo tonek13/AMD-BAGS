@@ -13,13 +13,19 @@
   padding: clamp(5rem, 12vh, 8rem) var(--gutter) clamp(2rem, 5vh, 4rem);
 }
 
+/* The section's text colour follows whichever featured bag is on screen (light or deep themes),
+   so these accents blend with it instead of using a fixed colour that could vanish on a deep background. */
 .kicker {
-  color: var(--gold-deep);
+  color: color-mix(in srgb, currentColor 55%, var(--gold-deep));
 }
 
 .title {
   font-size: clamp(2.8rem, 7vw, 7rem);
   max-width: 14ch;
+}
+
+.title em {
+  color: color-mix(in srgb, currentColor 35%, var(--burgundy));
 }
 
 .index {

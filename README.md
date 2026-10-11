@@ -1,7 +1,9 @@
-# MaisonHook — handmade crochet bag shop (design-review prototype)
+# MaisonHook — handmade crochet bag shop
 
-A frontend-only prototype for reviewing the design with the owner. Next.js (App Router) + TypeScript, custom CSS Modules, GSAP + ScrollTrigger, Lenis smooth scrolling on desktop.
-No backend, no accounts, no payments. Orders are prepared as a WhatsApp message that the customer sends themselves.
+Next.js (App Router) + TypeScript, custom CSS Modules, GSAP + ScrollTrigger, Lenis smooth scrolling on desktop.
+The owner manages the catalogue in **Sanity Studio**, embedded at `/studio`. No customer accounts, no payments: orders are prepared as a WhatsApp message that the customer sends themselves.
+
+**Owner?** Read [docs/OWNER-GUIDE.md](docs/OWNER-GUIDE.md). **Connecting Sanity (account steps, webhook, CORS, invites)?** Read [docs/SANITY-SETUP.md](docs/SANITY-SETUP.md).
 
 ## Run it
 
@@ -13,56 +15,73 @@ npm run dev        # http://localhost:3000
 ```bash
 npm run build && npm start   # production build, http://localhost:3000
 npm run lint
+npm run check:env            # says exactly which environment variables are missing
+npm run test:cms             # connected-mode checks against a local stand-in for Sanity
 ```
+
+### Which data does the site show?
+
+Set in `.env.local` (copy `.env.example`):
+
+- `SHOP_DATA_SOURCE=sanity` (default): the real shop, published content from Sanity. If Sanity isn't configured the build **fails with a clear message**; a running site shows a plain "can't load" page. It never quietly shows sample products.
+- `SHOP_DATA_SOURCE=demo`: the built-in **sample** bags (`src/data/demo-products.ts`), with a visible "Demo mode" notice. Never mixed with Sanity.
 
 ## What's on the page
 
 1. **Header** – brand, Collection, Our Craft, cart count.
 2. **Opening** – real photographs in an arch/overlap composition, masked headline reveal, price tag that opens the product.
-3. **From a thread to your everyday companion** – the signature scroll story: one reversible GSAP timeline drives an SVG crochet bag from a loose strand → foundation ring → rows of staggered stitches (a crochet hook travels along each row) → rolled braided edge and cut-out handle → the finished bag settling beside a real photo and an "Explore the collection" button. Backgrounds, captions and the weight of the headline word change with each stage. Desktop pins for ~4 screens, phones for ~3. A "Skip to the collection" link stays on screen.
-4. **Featured bags** – chosen by `featured` in the product data; each panel recolours the section from that bag's theme.
-5. **Collection** – style and colour filters (animated with GSAP Flip), availability badges, sold-out bags stay viewable.
+3. **From a thread to your everyday companion** – the signature scroll story: one reversible GSAP timeline works the real clutch photograph into existence, from a loose strand → foundation → rows of stitches (a crochet hook travels along each row) → handle opening and braided arch → the finished bag settling beside a real photo and an "Explore the collection" button. It is a brand story: it does not depend on any product in the catalogue. Backgrounds, captions and the weight of the headline word change with each stage. Desktop pins for ~4 screens, phones for ~3. A "Skip to the collection" link stays on screen.
+4. **Featured bags** – bags marked "Feature in the animated showcase" in Sanity; each panel recolours the section from a theme derived from the bag's first colour (no per-bag colour picking).
+5. **Collection** – collection and colour filters (animated with GSAP Flip), availability badges, sold-out bags stay viewable but can't be added to the bag. Hidden and draft bags never appear.
 6. **Our Craft** – close-up crops of the real photos.
 7. **Footer / contact.**
 
-Shopping: product dialog (photo gallery, quantity), cart drawer (add / remove / quantity / subtotal), cart saved in `localStorage`, WhatsApp checkout.
+Shopping: product dialog (photo gallery, quantity), cart drawer (add / remove / quantity / subtotal), cart saved in `localStorage`, WhatsApp checkout. Opening the bag and pressing "Order on WhatsApp" first re-check live prices and availability (`/api/catalog/check`): bags that were removed, hidden or sold out are explained and left out, a changed price is shown before the order can be sent, and the message always uses the freshly checked prices.
 
 With **reduced motion** (OS setting) the story is not pinned or animated: visitors see the finished illustration and all five steps as ordinary content. If the animation ever fails to start, the same fallback is used.
 
-## Values the owner needs to confirm
+## What the owner manages, and what stays in code
 
-The WhatsApp number and brand name were provided by the owner. Everything else below is **provisional** until confirmed.
+| Where | What |
+| --- | --- |
+| **Sanity → Products** | name, slug, description, price, ordered photo gallery (alt text, crop, hotspot), collection, colours, availability (Available / Sold out), hidden, featured, display order |
+| **Sanity → Collections** | name, slug, optional image, display order |
+| **Sanity → Shop Settings** | brand name, logo, currency, WhatsApp number, contact + social links, homepage headline/intro, craft heading/text |
+| `src/config/site.ts` | technical constants and the fallback wording used when a Shop Settings text field is empty. **The WhatsApp number has no code default for the connected shop** (empty = copy-the-message fallback) |
+| `src/data/craft.ts`, `src/data/story.ts`, `src/components/story/stages.ts` | the craft close-ups, the story photo and the story captions (brand content, not products) |
 
-| What | Where | Current value |
-| --- | --- | --- |
-| **WhatsApp number** | `src/config/site.ts` → `whatsappNumber` | `+961 81 616 199` (provided by the owner). Clear it to fall back to the order-message preview + Copy button |
-| Brand name | `src/config/site.ts` → `brandName` | `MaisonHook` (provided by the owner) |
-| Currency + number format | `src/config/site.ts` → `currency`, `locale` | `USD`, `en-US` |
-| Product names, taglines, descriptions, **prices**, **availability** | `src/data/products.ts` | placeholders (e.g. $74–$118; "Cloud Clutch" sold out, "Crème Crescent" made to order) |
-| Colour / style filter labels | `src/data/products.ts` → `colors`, `categories` | placeholders |
-| Which bags are featured, in what order, and their colours | `featured` on each product | 4 bags |
-| Hero bags + the bag shown at the end of the story | `src/config/site.ts` → `heroProducts`, `storyProduct` | cherry-ripple-basket / apricot-arch-bag / bordeaux-clutch |
-| Max quantity per bag | `src/config/site.ts` → `maxQuantityPerItem` | 10 |
-| Contact lines (Instagram, email, location) | `src/config/site.ts` → `contact` | empty (hidden) |
-| Story, craft and headline copy | `src/components/story/stages.ts`, `src/data/craft.ts`, `Hero.tsx`, `Craft.tsx` | placeholder wording |
-| "Design review" notice above the collection | `src/config/site.ts` → `showReviewNotes` | `true` – set to `false` for launch |
+Still to be confirmed with the owner: the real bags, prices, descriptions, photos' alt text, currency, and the brand logo (not yet supplied as a file).
 
 ## Photos
 
 The seven supplied photos are copied (originals untouched) to `public/images/products/` with descriptive names. The two burgundy-clutch photos are one product gallery. Close-up crops for the craft section are generated at native resolution into `public/images/crops/` by `node scripts/make-crops.mjs`.
 
-## Connecting Sanity later
+## How the catalogue reaches the page
 
-Components never read `src/data/*` directly. They go through `src/lib/catalog.ts` (`getProducts`, `getFeaturedProducts`, `getHeroProducts`, `getStoryProduct`, `getCategories`, `getColors`, `getCraftMoments`), all async and typed by `src/types/catalog.ts`. Replace the bodies of those functions with Sanity queries that return the same shapes and delete `src/data/products.ts`.
+```
+Sanity (published) ──GROQ──▶ src/sanity/lib/queries.ts ──▶ mappers.ts ──▶ src/lib/catalog.ts ('use cache' + tags) ──▶ pages
+       ▲                                                                                          ▲
+       └── signed webhook ──▶ POST /api/revalidate (verifies signature, expires tags) ─────────────┘
+```
+
+Components never talk to Sanity: they receive `Catalog` / `ShopSettings` (`src/types`). Drafts are excluded twice (the client's `published` perspective and the queries). Hidden products, and products with no price or no photo, are filtered out.
 
 ## Code map
 
 ```
-src/config/site.ts          brand + shop settings (single place)
-src/data/                   typed local content (products, craft crops)
-src/lib/catalog.ts          data-access layer (swap for Sanity)
+src/app/(site)/             the storefront (its own root layout: header, cart, Lenis)
+src/app/(studio)/           the owner's dashboard at /studio (its own root layout, nothing of the storefront)
+src/app/api/                /api/revalidate (signed webhook), /api/catalog/check (live cart check)
+src/sanity/                 schemas, dashboard structure, queries, image helper, mappers, env validation
+sanity.config.ts            Studio configuration
+src/config/site.ts          technical constants + fallback wording
+src/data/                   demo sample bags, craft close-ups, story photo
+src/lib/catalog.ts          cached data-access layer (Sanity or demo)
 src/lib/cart-store.ts       localStorage cart (useSyncExternalStore, hydration-safe)
+src/lib/cart-lines.ts       how each bag in the cart stands now (ok / sold out / removed)
 src/lib/whatsapp.ts         order message + wa.me link
+scripts/import-products.mjs optional one-time import of the current bags as drafts
+scripts/testing/            local Sanity stand-in + connected-mode test suite
 src/components/story/       the scroll story (geometry, SVG, timeline, copy)
 src/components/motion/      MotionRoot (Lenis + motion flags), MovingPhoto (tilt/parallax)
 src/components/shop/        cart drawer, product dialog, native <dialog> wrapper

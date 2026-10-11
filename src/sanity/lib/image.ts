@@ -50,6 +50,13 @@ export function toProductImage(raw: RawImage | null | undefined, fallbackAlt: st
     ...(process.env.SANITY_CDN_BASE_URL ? { baseUrl: process.env.SANITY_CDN_BASE_URL } : {}),
   });
   let url = builder.image({ _type: "image", asset: { _type: "reference", _ref: raw.ref } });
+
+  // Vector logos are served as-is: no resize parameters, so the URL ends in ".svg" and next/image
+  // (which does not optimise SVG) passes it through untouched. Crop and hotspot do not apply to them.
+  if (raw.ref.endsWith("-svg")) {
+    return { src: url.url(), alt: (raw.alt ?? "").trim() || fallbackAlt, width: size.width, height: size.height };
+  }
+
   if (left || right || top || bottom) {
     url = url.rect(Math.round(size.width * left), Math.round(size.height * top), cropW, cropH);
   }

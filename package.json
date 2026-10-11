@@ -9,7 +9,7 @@
     "lint": "eslint",
     "test:cms": "node scripts/testing/cms-tests.mjs",
     "check:env": "node scripts/check-env.mjs",
-    "import:products": "node --env-file=.env.local scripts/import-products.mjs"
+    "import:products": "node --env-file-if-exists=.env.local scripts/import-products.mjs"
   },
   "dependencies": {
     "@sanity/client": "^8.9.0",

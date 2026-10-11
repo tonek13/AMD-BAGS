@@ -40,9 +40,10 @@ export function FilterPanel({ open, onClose, products, categories, colors, filte
         </header>
 
         <div className={styles.body}>
+          {categories.length > 0 && (
           <details className={styles.section} open>
             <summary className={styles.summary}>
-              <span>Style</span>
+              <span>Collection</span>
               {filters.categories.length > 0 && <span className={styles.picked}>{filters.categories.length}</span>}
               <Chevron />
             </summary>
@@ -71,7 +72,9 @@ export function FilterPanel({ open, onClose, products, categories, colors, filte
               })}
             </ul>
           </details>
+          )}
 
+          {colors.length > 0 && (
           <details className={styles.section} open>
             <summary className={styles.summary}>
               <span>Colour</span>
@@ -103,6 +106,7 @@ export function FilterPanel({ open, onClose, products, categories, colors, filte
               })}
             </ul>
           </details>
+          )}
 
           <details className={styles.section} open>
             <summary className={styles.summary}>

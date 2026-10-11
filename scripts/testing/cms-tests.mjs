@@ -20,7 +20,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createRequire } from "node:module";
 import { rmSync } from "node:fs";
-import { collections, dataset, products, settings } from "./fixtures.mjs";
+import { dataset, products, settings } from "./fixtures.mjs";
 
 const require = createRequire(import.meta.url);
 const { encodeSignatureHeader } = require("@sanity/webhook");
