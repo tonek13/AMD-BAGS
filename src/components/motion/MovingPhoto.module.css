@@ -1,0 +1,33 @@
+.root {
+  position: relative;
+  will-change: transform;
+}
+
+.frame {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  background: var(--ivory-deep);
+  border-radius: 3px;
+  box-shadow: 0 1.6rem 3rem -1.4rem rgb(35 31 32 / 0.5);
+}
+
+.arch {
+  border-radius: 999px 999px 3px 3px;
+}
+
+.round {
+  border-radius: 50%;
+}
+
+.inner {
+  position: absolute;
+  inset: 0;
+  will-change: transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .root {
+    will-change: auto;
+  }
+}

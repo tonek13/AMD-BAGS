@@ -1,0 +1,47 @@
+.stepper {
+  display: inline-flex;
+  align-items: stretch;
+  border: 1.5px solid var(--charcoal);
+  border-radius: var(--radius);
+  background: transparent;
+  height: 3rem;
+}
+
+.sm {
+  height: 2.25rem;
+}
+
+.button {
+  display: grid;
+  place-items: center;
+  width: 2.9rem;
+  border: 0;
+  background: transparent;
+  transition: background-color 0.2s;
+}
+
+.sm .button {
+  width: 2.25rem;
+}
+
+.button:hover:not(:disabled) {
+  background: rgb(35 31 32 / 0.08);
+}
+
+.button:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.value {
+  display: grid;
+  place-items: center;
+  min-width: 2.4rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  border-inline: 1.5px solid var(--charcoal);
+}
+
+.sm .value {
+  min-width: 2rem;
+}

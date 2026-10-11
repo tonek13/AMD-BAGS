@@ -1,0 +1,73 @@
+.dialog {
+  padding: 0;
+  border: 0;
+  color: var(--charcoal);
+  background: var(--paper);
+  max-width: none;
+  max-height: none;
+  overflow: hidden;
+  opacity: 0;
+  transition:
+    opacity 0.3s var(--ease-out),
+    transform 0.42s var(--ease-out);
+}
+
+.dialog::backdrop {
+  background: rgb(35 31 32 / 0.55);
+  backdrop-filter: blur(3px);
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.dialog[data-state="open"] {
+  opacity: 1;
+  transform: none;
+}
+
+.dialog[data-state="open"]::backdrop {
+  opacity: 1;
+}
+
+.inner {
+  height: 100%;
+  width: 100%;
+}
+
+/* Cart: slides in from the right */
+.drawer {
+  position: fixed;
+  inset: 0 0 0 auto;
+  margin: 0;
+  width: min(32rem, 100vw);
+  height: 100dvh;
+  transform: translateX(8%);
+  box-shadow: -1.5rem 0 4rem rgb(35 31 32 / 0.25);
+}
+
+/* Product details: a centred sheet on desktop, full-screen on phones */
+.modal {
+  position: fixed;
+  inset: 0;
+  margin: auto;
+  width: min(68rem, calc(100vw - 2.5rem));
+  height: min(46rem, calc(100dvh - 2.5rem));
+  transform: translateY(2rem) scale(0.98);
+  border-radius: var(--radius);
+  box-shadow: 0 2rem 5rem rgb(35 31 32 / 0.35);
+}
+
+@media (max-width: 52rem) {
+  .modal {
+    width: 100vw;
+    height: 100dvh;
+    border-radius: 0;
+    transform: translateY(2.5rem);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dialog,
+  .dialog::backdrop {
+    transition: none;
+  }
+}

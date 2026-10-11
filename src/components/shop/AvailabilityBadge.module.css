@@ -1,0 +1,39 @@
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.28rem 0.6rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  line-height: 1;
+  border-radius: 2px;
+  background: var(--paper);
+  color: var(--charcoal);
+}
+
+.dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.in-stock .dot {
+  background: #2f7a4b;
+}
+
+.made-to-order .dot {
+  background: #b07a14;
+}
+
+.sold-out {
+  background: var(--charcoal);
+  color: var(--ivory);
+}
+
+.sold-out .dot {
+  background: transparent;
+  border: 1.5px solid var(--ivory);
+}

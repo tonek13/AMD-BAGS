@@ -1,0 +1,50 @@
+.marquee {
+  overflow: hidden;
+  padding: 1.05rem 0;
+  background: var(--burgundy);
+  color: var(--ivory);
+  border-block: 1px solid var(--burgundy-deep);
+}
+
+.track {
+  display: flex;
+  width: max-content;
+  animation: slide 38s linear infinite;
+}
+
+.row {
+  display: flex;
+  flex: none;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: 1.6rem;
+  padding-right: 1.6rem;
+  font-family: var(--font-display);
+  font-size: clamp(1.3rem, 2.4vw, 1.9rem);
+  font-style: italic;
+  font-weight: 420;
+  font-variation-settings: "SOFT" 100, "WONK" 1;
+  white-space: nowrap;
+}
+
+.knot {
+  width: 1.4rem;
+  height: 1.4rem;
+  color: var(--gold-light);
+}
+
+@keyframes slide {
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .track {
+    animation: none;
+    overflow-x: auto;
+  }
+}

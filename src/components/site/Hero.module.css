@@ -1,0 +1,232 @@
+.hero {
+  position: relative;
+  min-height: 100svh;
+  padding-top: calc(var(--header-h) + clamp(1.5rem, 4vh, 3rem));
+  padding-bottom: clamp(3rem, 8vh, 5rem);
+  overflow: clip;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.08fr) minmax(0, 0.92fr);
+  align-items: center;
+  gap: clamp(1rem, 3vw, 3rem);
+  max-width: var(--max);
+  margin-inline: auto;
+  padding-inline: var(--gutter);
+}
+
+.copy {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  gap: 1.5rem;
+}
+
+.eyebrow {
+  color: var(--gold-deep);
+}
+
+.title {
+  font-size: clamp(3.3rem, 8.1vw, 9.2rem);
+  line-height: 0.9;
+  margin-left: -0.04em;
+}
+
+.mask {
+  display: block;
+  overflow: clip;
+  /* room for ascenders/descenders inside the clipping mask */
+  padding: 0.06em 0.12em 0.1em 0;
+  margin-block: -0.06em;
+}
+
+.line {
+  display: inline-block;
+  will-change: transform;
+}
+
+.lede {
+  max-width: 34rem;
+  font-size: clamp(1.05rem, 1.5vw, 1.25rem);
+  color: var(--ink-soft);
+}
+
+.ctas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.9rem;
+  margin-top: 0.4rem;
+}
+
+.collage {
+  position: relative;
+  justify-self: end;
+  width: min(100%, 36rem);
+  padding-bottom: 7%;
+}
+
+.main {
+  position: relative;
+  width: 80%;
+  margin-left: auto;
+}
+
+.tag {
+  position: absolute;
+  right: 0;
+  bottom: 1rem;
+  z-index: 3;
+  display: inline-flex;
+  gap: 0.5rem;
+  align-items: center;
+  padding: 0.55rem 0.9rem;
+  border: 0;
+  border-radius: 2px;
+  background: var(--charcoal);
+  color: var(--ivory);
+  font-size: 0.86rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  transform: translateX(14%);
+  box-shadow: 0 0.6rem 1.4rem -0.6rem rgb(35 31 32 / 0.6);
+  transition:
+    background-color 0.25s,
+    transform 0.4s var(--ease-out);
+}
+
+.tag:hover {
+  background: var(--burgundy);
+  transform: translateX(14%) translateY(-3px);
+}
+
+.second {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  z-index: 2;
+  width: 40%;
+}
+
+.secondPhoto > div {
+  border: 7px solid var(--ivory);
+}
+
+.badge {
+  position: absolute;
+  left: 4%;
+  top: -3%;
+  z-index: 4;
+  display: grid;
+  place-items: center;
+  width: clamp(6.5rem, 12vw, 9rem);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: var(--charcoal);
+  color: var(--gold-light);
+  box-shadow: 0 0.8rem 1.8rem -0.8rem rgb(35 31 32 / 0.7);
+}
+
+.badge > svg {
+  grid-area: 1 / 1;
+}
+
+.badgeSpin {
+  width: 100%;
+  height: 100%;
+  animation: spin 22s linear infinite;
+}
+
+.badgeText {
+  fill: currentColor;
+  font-family: var(--font-body);
+  font-size: 11.4px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.badgeCore {
+  width: 30%;
+  height: 30%;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.scrollCue {
+  position: absolute;
+  left: var(--gutter);
+  bottom: 1.6rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.8rem;
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  text-decoration: none;
+}
+
+.cueLine {
+  position: relative;
+  width: 3.5rem;
+  height: 0;
+  border-top: 2px dashed currentColor;
+  animation: cue 2.4s var(--ease-out) infinite;
+  transform-origin: left;
+}
+
+@keyframes cue {
+  0% {
+    transform: scaleX(0.2);
+    opacity: 0.2;
+  }
+  60% {
+    transform: scaleX(1);
+    opacity: 1;
+  }
+  100% {
+    transform: scaleX(1);
+    opacity: 0.2;
+  }
+}
+
+@media (max-width: 52rem) {
+  .grid {
+    grid-template-columns: 1fr;
+    gap: 2.2rem;
+  }
+
+  .title {
+    font-size: clamp(3.1rem, 15.5vw, 5.6rem);
+  }
+
+  .collage {
+    justify-self: center;
+    width: min(100%, 26rem);
+    padding-bottom: 12%;
+  }
+
+  .second {
+    width: 42%;
+  }
+
+  .tag {
+    transform: translateX(6%);
+    bottom: 0.8rem;
+  }
+
+  .scrollCue {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .badgeSpin,
+  .cueLine {
+    animation: none;
+  }
+}

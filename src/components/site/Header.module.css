@@ -1,0 +1,156 @@
+.header {
+  position: fixed;
+  inset: 0 0 auto 0;
+  z-index: 60;
+  height: var(--header-h);
+  background: color-mix(in srgb, var(--ivory) 93%, transparent);
+  backdrop-filter: blur(14px) saturate(1.2);
+  border-bottom: 1px solid color-mix(in srgb, var(--charcoal) 14%, transparent);
+  color: var(--charcoal);
+}
+
+.bar {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  height: 100%;
+  max-width: var(--max);
+  margin-inline: auto;
+  padding-inline: var(--gutter);
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  margin-right: auto;
+  text-decoration: none;
+  color: var(--burgundy);
+}
+
+.mark {
+  width: 1.55rem;
+  height: 1.55rem;
+  transition: transform 0.7s var(--ease-out);
+}
+
+.brand:hover .mark {
+  transform: rotate(200deg);
+}
+
+.name {
+  font-family: var(--font-display);
+  font-size: 1.55rem;
+  font-weight: 700;
+  font-variation-settings: "SOFT" 100, "WONK" 0;
+  letter-spacing: 0.01em;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.nav {
+  display: flex;
+  gap: clamp(1rem, 3vw, 2.2rem);
+}
+
+.link {
+  position: relative;
+  white-space: nowrap;
+  padding: 0.5rem 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.link::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 0.2rem 0;
+  border-bottom: 2px dashed currentColor;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.4s var(--ease-out);
+}
+
+.link:hover::after,
+.link:focus-visible::after {
+  transform: scaleX(1);
+}
+
+.cart {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 2.75rem;
+  padding: 0 0.3rem 0 0.6rem;
+  border: 0;
+  background: transparent;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.count {
+  display: grid;
+  place-items: center;
+  min-width: 1.55rem;
+  height: 1.55rem;
+  padding-inline: 0.35rem;
+  border-radius: 999px;
+  border: 1.5px solid currentColor;
+  font-size: 0.8rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.filled {
+  background: var(--burgundy);
+  border-color: var(--burgundy);
+  color: var(--ivory);
+}
+
+@media (max-width: 32rem) {
+  .name {
+    font-size: 1.3rem;
+  }
+
+  .cartLabel {
+    display: none;
+  }
+
+  .nav {
+    gap: 0.9rem;
+  }
+
+  .link {
+    font-size: 0.88rem;
+  }
+
+  .bar {
+    gap: 0.6rem;
+  }
+
+  .mark {
+    display: none;
+  }
+}
+
+@media (max-width: 24rem) {
+  .bar {
+    gap: 0.4rem;
+    padding-inline: 0.8rem;
+  }
+
+  .name {
+    font-size: 1.12rem;
+  }
+
+  .nav {
+    gap: 0.65rem;
+  }
+
+  .link {
+    font-size: 0.82rem;
+  }
+}
