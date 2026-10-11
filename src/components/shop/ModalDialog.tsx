@@ -9,7 +9,7 @@ interface ModalDialogProps {
   onClose: () => void;
   /** Accessible name announced when the dialog opens. */
   label: string;
-  variant: "drawer" | "modal";
+  variant: "drawer" | "drawerLeft" | "modal";
   /** Called once the exit transition has finished and the dialog is fully closed. */
   onExited?: () => void;
   children: React.ReactNode;

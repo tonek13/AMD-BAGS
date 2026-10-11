@@ -1,4 +1,4 @@
-# AmD Bags — handmade crochet bag shop (design-review prototype)
+# maisonhook — handmade crochet bag shop (design-review prototype)
 
 A frontend-only prototype for reviewing the design with the owner. Next.js (App Router) + TypeScript, custom CSS Modules, GSAP + ScrollTrigger, Lenis smooth scrolling on desktop.
 No backend, no accounts, no payments. Orders are prepared as a WhatsApp message that the customer sends themselves.
@@ -36,7 +36,7 @@ The WhatsApp number and brand name were provided by the owner. Everything else b
 | What | Where | Current value |
 | --- | --- | --- |
 | **WhatsApp number** | `src/config/site.ts` → `whatsappNumber` | `+961 81 616 199` (provided by the owner). Clear it to fall back to the order-message preview + Copy button |
-| Brand name | `src/config/site.ts` → `brandName` | `AmD Bags` (provided by the owner) |
+| Brand name | `src/config/site.ts` → `brandName` | `maisonhook` (provided by the owner) |
 | Currency + number format | `src/config/site.ts` → `currency`, `locale` | `USD`, `en-US` |
 | Product names, taglines, descriptions, **prices**, **availability** | `src/data/products.ts` | placeholders (e.g. $74–$118; "Cloud Clutch" sold out, "Crème Crescent" made to order) |
 | Colour / style filter labels | `src/data/products.ts` → `colors`, `categories` | placeholders |

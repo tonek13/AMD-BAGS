@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
-import type { CategoryId, ColorId, Product } from "@/types/catalog";
+import type { ColorOption, Product } from "@/types/catalog";
 import { siteConfig } from "@/config/site";
 import { formatPrice } from "@/lib/format";
 import { Flip, gsap, registerGsap, ScrollTrigger } from "@/lib/gsap";
@@ -10,23 +10,44 @@ import { useIsomorphicLayoutEffect } from "@/lib/hooks";
 import { prefersReducedMotion } from "@/lib/scroll";
 import { AvailabilityBadge } from "@/components/shop/AvailabilityBadge";
 import { useShop } from "@/components/shop/shop-context";
+import { FilterPanel } from "./collection/FilterPanel";
+import { Swatch } from "./collection/Swatch";
+import {
+  activeFilterCount,
+  emptyFilters,
+  matchesFilters,
+  sortOptions,
+  sortProducts,
+  toggleItem,
+  type Density,
+  type FilterState,
+  type SortKey,
+} from "./collection/filters";
 import styles from "./Collection.module.css";
 
-type CategoryFilter = CategoryId | "all";
-type ColorFilter = ColorId | "all";
+interface Chip {
+  key: string;
+  label: string;
+  group: "categories" | "colors" | "stock";
+  id?: string;
+  swatch?: ColorOption["swatch"];
+}
 
 export function Collection({ products }: { products: Product[] }) {
   const { categories, colors, openProduct, addToCart, openCart } = useShop();
-  const [category, setCategory] = useState<CategoryFilter>("all");
-  const [color, setColor] = useState<ColorFilter>("all");
+  const [filters, setFilters] = useState<FilterState>(emptyFilters);
+  const [sort, setSort] = useState<SortKey>("featured");
+  const [density, setDensity] = useState<Density>("standard");
+  const [panelOpen, setPanelOpen] = useState(false);
 
   const grid = useRef<HTMLUListElement>(null);
   const flipState = useRef<ReturnType<typeof Flip.getState> | null>(null);
 
-  const matches = (p: Product) => (category === "all" || p.category === category) && (color === "all" || p.color === color);
-  const visibleCount = products.filter(matches).length;
+  const sorted = useMemo(() => sortProducts(products, sort), [products, sort]);
+  const visibleCount = products.filter((p) => matchesFilters(p, filters)).length;
+  const active = activeFilterCount(filters);
 
-  // Remember where every card is before the filter changes, then FLIP them to their new places.
+  // Remember where every card is before anything changes, then FLIP them to their new places.
   function change(apply: () => void) {
     const cards = grid.current?.querySelectorAll("[data-card]");
     if (cards && !prefersReducedMotion()) {
@@ -36,6 +57,9 @@ export function Collection({ products }: { products: Product[] }) {
     }
     apply();
   }
+
+  const updateFilters = (next: FilterState) => change(() => setFilters(next));
+  const clearFilters = () => change(() => setFilters(emptyFilters));
 
   useIsomorphicLayoutEffect(() => {
     const state = flipState.current;
@@ -55,7 +79,7 @@ export function Collection({ products }: { products: Product[] }) {
       onLeave: (els) =>
         gsap.to(els, { autoAlpha: 0, scale: 0.8, duration: 0.35, ease: "power2.in", clearProps: "transform,opacity,visibility" }),
     });
-  }, [category, color]);
+  }, [filters, sort, density]);
 
   // Entrance: cards rise in as the grid scrolls into view.
   useEffect(() => {
@@ -77,7 +101,18 @@ export function Collection({ products }: { products: Product[] }) {
     return () => mm.revert();
   }, [products]);
 
-  const reset = () => change(() => (setCategory("all"), setColor("all")));
+  // Active filters as plain data (removal goes through removeChip, an event handler).
+  const chips: Chip[] = [
+    ...categories.filter((c) => filters.categories.includes(c.id)).map((c): Chip => ({ key: `c-${c.id}`, label: c.label, group: "categories", id: c.id })),
+    ...colors.filter((c) => filters.colors.includes(c.id)).map((c): Chip => ({ key: `k-${c.id}`, label: c.label, group: "colors", id: c.id, swatch: c.swatch })),
+    ...(filters.hideSoldOut ? [{ key: "stock", label: "Sold-out hidden", group: "stock" } as Chip] : []),
+  ];
+
+  function removeChip(chip: Chip) {
+    if (chip.group === "categories") updateFilters({ ...filters, categories: filters.categories.filter((x) => x !== chip.id) });
+    else if (chip.group === "colors") updateFilters({ ...filters, colors: filters.colors.filter((x) => x !== chip.id) });
+    else updateFilters({ ...filters, hideSoldOut: false });
+  }
 
   return (
     <section id="collection" className={styles.collection} aria-labelledby="collection-title">
@@ -93,63 +128,111 @@ export function Collection({ products }: { products: Product[] }) {
             </p>
           )}
         </header>
+      </div>
 
-        <div className={styles.filters}>
-          <div className={styles.group} role="group" aria-labelledby="filter-style">
-            <p id="filter-style" className={styles.legend}>
-              Style
-            </p>
-            <div className={styles.chips}>
-              <FilterChip pressed={category === "all"} onClick={() => change(() => setCategory("all"))}>
-                All
-              </FilterChip>
-              {categories.map((c) => (
-                <FilterChip key={c.id} pressed={category === c.id} onClick={() => change(() => setCategory(c.id))}>
-                  {c.label}
-                </FilterChip>
-              ))}
-            </div>
+      {/* Sticky toolbar: Filters button, quick colour swatches, sort and photo size */}
+      <div className={styles.toolbar}>
+        <div className={styles.toolbarInner}>
+          <button
+            type="button"
+            className={styles.filterButton}
+            onClick={() => setPanelOpen(true)}
+            aria-haspopup="dialog"
+            aria-expanded={panelOpen}
+          >
+            <svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true">
+              <path d="M3 5.5h14M6 10h8M8.5 14.5h3" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+            </svg>
+            Filters
+            {active > 0 && (
+              <span className={styles.filterBadge}>
+                {active}
+                <span className="sr-only"> active</span>
+              </span>
+            )}
+          </button>
+
+          <div className={styles.quick} role="group" aria-label="Quick colour filter">
+            {colors.map((c) => (
+              <button
+                key={c.id}
+                type="button"
+                className={styles.quickSwatch}
+                aria-pressed={filters.colors.includes(c.id)}
+                aria-label={c.label}
+                data-label={c.label}
+                onClick={() => updateFilters({ ...filters, colors: toggleItem(filters.colors, c.id) })}
+              >
+                <Swatch swatch={c.swatch} size="md" />
+              </button>
+            ))}
           </div>
 
-          <div className={styles.group} role="group" aria-labelledby="filter-colour">
-            <p id="filter-colour" className={styles.legend}>
-              Colour
-            </p>
-            <div className={styles.chips}>
-              <FilterChip pressed={color === "all"} onClick={() => change(() => setColor("all"))}>
-                All
-              </FilterChip>
-              {colors.map((c) => (
-                <FilterChip key={c.id} pressed={color === c.id} onClick={() => change(() => setColor(c.id))}>
-                  <span
-                    className={styles.swatch}
-                    aria-hidden="true"
-                    style={{
-                      background: c.swatch.length === 2 ? `linear-gradient(135deg, ${c.swatch[0]} 50%, ${c.swatch[1]} 50%)` : c.swatch[0],
-                    }}
-                  />
-                  {c.label}
-                </FilterChip>
+          <label className={styles.sort}>
+            <span className="sr-only">Sort by</span>
+            <select value={sort} onChange={(e) => change(() => setSort(e.target.value as SortKey))}>
+              {sortOptions.map((o) => (
+                <option key={o.id} value={o.id}>
+                  {o.id === "featured" ? "Sort: Featured" : o.label}
+                </option>
               ))}
-            </div>
+            </select>
+            <svg className={styles.sortChevron} viewBox="0 0 20 20" width="16" height="16" aria-hidden="true">
+              <path d="M5 8l5 5 5-5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </label>
+
+          <div className={styles.density} role="group" aria-label="Photo size">
+            <button type="button" aria-pressed={density === "large"} aria-label="Large photos" onClick={() => change(() => setDensity("large"))}>
+              <svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true">
+                <rect x="3" y="3" width="6" height="14" rx="1" fill="currentColor" />
+                <rect x="11" y="3" width="6" height="14" rx="1" fill="currentColor" />
+              </svg>
+            </button>
+            <button type="button" aria-pressed={density === "standard"} aria-label="Standard photos" onClick={() => change(() => setDensity("standard"))}>
+              <svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true">
+                <rect x="2" y="3" width="4" height="14" rx="1" fill="currentColor" />
+                <rect x="8" y="3" width="4" height="14" rx="1" fill="currentColor" />
+                <rect x="14" y="3" width="4" height="14" rx="1" fill="currentColor" />
+              </svg>
+            </button>
           </div>
         </div>
+      </div>
 
-        <p className={styles.status} role="status" aria-live="polite">
-          Showing {visibleCount} of {products.length} bags
-          {(category !== "all" || color !== "all") && (
-            <button type="button" className={styles.reset} onClick={reset}>
-              Clear filters
-            </button>
+      <div className={styles.inner}>
+        <div className={styles.results}>
+          <p className={styles.status} role="status" aria-live="polite">
+            Showing {visibleCount} of {products.length} bags
+          </p>
+          {chips.length > 0 && (
+            <ul className={styles.chips} aria-label="Active filters">
+              {chips.map((chip) => (
+                <li key={chip.key}>
+                  <button type="button" className={styles.chip} onClick={() => removeChip(chip)} aria-label={`Remove filter: ${chip.label}`}>
+                    {chip.swatch && <Swatch swatch={chip.swatch} size="sm" />}
+                    {chip.label}
+                    <svg viewBox="0 0 12 12" width="10" height="10" aria-hidden="true">
+                      <path d="M2 2l8 8M10 2L2 10" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                    </svg>
+                  </button>
+                </li>
+              ))}
+              <li>
+                <button type="button" className={styles.clearAll} onClick={clearFilters}>
+                  Clear all
+                </button>
+              </li>
+            </ul>
           )}
-        </p>
+        </div>
 
-        <ul ref={grid} className={styles.grid}>
-          {products.map((p) => (
+        <ul ref={grid} className={styles.grid} data-density={density}>
+          {sorted.map((p) => (
             <ProductCard
               key={p.slug}
               product={p}
-              hidden={!matches(p)}
+              hidden={!matchesFilters(p, filters)}
               categoryLabel={categories.find((c) => c.id === p.category)?.label ?? ""}
               colorLabel={colors.find((c) => c.id === p.color)?.label ?? ""}
               onOpen={() => openProduct(p.slug)}
@@ -164,21 +247,25 @@ export function Collection({ products }: { products: Product[] }) {
         {visibleCount === 0 && (
           <div className={styles.empty}>
             <p className={styles.emptyTitle}>No bags match that combination yet.</p>
-            <button type="button" className="btn btn--ghost" onClick={reset}>
-              Show every bag
+            <button type="button" className="btn btn--ghost" onClick={clearFilters}>
+              Clear filters
             </button>
           </div>
         )}
       </div>
-    </section>
-  );
-}
 
-function FilterChip({ pressed, onClick, children }: { pressed: boolean; onClick: () => void; children: React.ReactNode }) {
-  return (
-    <button type="button" className={styles.chip} aria-pressed={pressed} onClick={onClick}>
-      {children}
-    </button>
+      <FilterPanel
+        open={panelOpen}
+        onClose={() => setPanelOpen(false)}
+        products={products}
+        categories={categories}
+        colors={colors}
+        filters={filters}
+        resultCount={visibleCount}
+        onChange={updateFilters}
+        onClear={clearFilters}
+      />
+    </section>
   );
 }
 
@@ -224,7 +311,7 @@ function ProductCard({ product, hidden, categoryLabel, colorLabel, onOpen, onAdd
             />
           )}
           <AvailabilityBadge availability={product.availability} className={styles.badge} />
-          <span className={styles.quick} aria-hidden="true">
+          <span className={styles.quickLook} aria-hidden="true">
             Quick look
           </span>
         </button>

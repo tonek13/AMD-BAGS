@@ -21,7 +21,7 @@ export interface SiteConfig {
 
 export const siteConfig: SiteConfig = {
   /** Brand name, as given by the owner. Change it here and it updates everywhere. */
-  brandName: "AmD Bags",
+  brandName: "maisonhook",
   tagline: "Handmade crochet bags",
   description:
     "Chunky, hand-crocheted bags made slowly in small batches. Browse the collection and order by WhatsApp.",
@@ -42,7 +42,7 @@ export const siteConfig: SiteConfig = {
 
   /** Optional contact lines for the footer. Empty values are not shown. */
   contact: {
-    instagram: "", // handle only, e.g. "amdbags"
+    instagram: "", // handle only, e.g. "maisonhook"
     email: "",
     location: "",
   },
@@ -58,7 +58,7 @@ export const siteConfig: SiteConfig = {
   showReviewNotes: true,
 
   /** localStorage key for the cart. */
-  cartStorageKey: "amd-bags.cart.v1",
+  cartStorageKey: "maisonhook.cart.v1",
 };
 
 export const navLinks = [

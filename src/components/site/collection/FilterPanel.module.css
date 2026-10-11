@@ -1,0 +1,264 @@
+.panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--paper);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.1rem 1.4rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.title {
+  font-family: var(--font-display);
+  font-size: 1.7rem;
+  font-weight: 560;
+  font-variation-settings: "SOFT" 80;
+}
+
+.close {
+  display: grid;
+  place-items: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  transition: background-color 0.2s;
+}
+
+.close:hover {
+  background: rgb(35 31 32 / 0.08);
+}
+
+.body {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 0 1.4rem;
+}
+
+/* ─── accordion sections ─── */
+.section {
+  border-bottom: 1px solid var(--line);
+  padding-block: 0.2rem 1.2rem;
+}
+
+.summary {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 1rem 0 0.8rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  list-style: none;
+  cursor: pointer;
+}
+
+.summary::-webkit-details-marker {
+  display: none;
+}
+
+.picked {
+  display: grid;
+  place-items: center;
+  min-width: 1.4rem;
+  height: 1.4rem;
+  padding-inline: 0.3rem;
+  border-radius: 999px;
+  background: var(--burgundy);
+  color: var(--ivory);
+  font-size: 0.74rem;
+  letter-spacing: 0;
+}
+
+.chevron {
+  margin-left: auto;
+  transition: transform 0.3s var(--ease-out);
+}
+
+.section[open] .chevron {
+  transform: rotate(180deg);
+}
+
+/* ─── checkbox rows ─── */
+.list {
+  display: grid;
+}
+
+.option,
+.toggle {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  min-height: 2.9rem;
+  padding-block: 0.2rem;
+  cursor: pointer;
+}
+
+.box {
+  display: grid;
+  place-items: center;
+  width: 1.35rem;
+  height: 1.35rem;
+  flex: none;
+  border: 1.5px solid var(--charcoal);
+  border-radius: 2px;
+  color: transparent;
+  transition:
+    background-color 0.2s,
+    color 0.2s;
+}
+
+.box svg {
+  width: 0.95rem;
+  height: 0.95rem;
+}
+
+.option input:checked + .box {
+  background: var(--burgundy);
+  border-color: var(--burgundy);
+  color: var(--ivory);
+}
+
+.label {
+  flex: 1;
+  font-size: 1rem;
+}
+
+.count,
+.swatchCount {
+  font-size: 0.86rem;
+  color: var(--ink-soft);
+  font-variant-numeric: tabular-nums;
+}
+
+.option input:focus-visible + .box,
+.toggle input:focus-visible + .track,
+.swatchOption input:focus-visible + .swatchRing {
+  outline: 3px solid var(--focus);
+  outline-offset: 3px;
+}
+
+.empty {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* ─── colour swatches ─── */
+.swatches {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.9rem 0.5rem;
+}
+
+.swatchOption {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: 0.35rem;
+  padding: 0.3rem 0.1rem;
+  cursor: pointer;
+  text-align: center;
+}
+
+.swatchRing {
+  display: grid;
+  place-items: center;
+  padding: 3px;
+  border: 2px solid transparent;
+  border-radius: 50%;
+  transition:
+    border-color 0.2s,
+    transform 0.35s var(--ease-out);
+}
+
+.swatchOption:hover .swatchRing {
+  transform: scale(1.08);
+}
+
+.swatchOption input:checked + .swatchRing {
+  border-color: var(--charcoal);
+}
+
+.swatchLabel {
+  font-size: 0.86rem;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.swatchOption input:checked ~ .swatchLabel {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-thickness: 2px;
+}
+
+/* ─── toggle ─── */
+.track {
+  position: relative;
+  width: 2.7rem;
+  height: 1.5rem;
+  flex: none;
+  border: 1.5px solid var(--charcoal);
+  border-radius: 999px;
+  transition: background-color 0.25s;
+}
+
+.thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 1rem;
+  height: 1rem;
+  border-radius: 50%;
+  background: var(--charcoal);
+  transition:
+    transform 0.35s var(--ease-out),
+    background-color 0.25s;
+}
+
+.toggle input:checked + .track {
+  background: var(--burgundy);
+  border-color: var(--burgundy);
+}
+
+.toggle input:checked + .track .thumb {
+  transform: translateX(1.2rem);
+  background: var(--ivory);
+}
+
+/* ─── footer ─── */
+.footer {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.4rem 1.2rem;
+  border-top: 1px solid var(--line);
+  background: var(--ivory);
+}
+
+.clear {
+  padding: 0.6rem 0.2rem;
+  border: 0;
+  background: none;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.clear:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  text-decoration: none;
+}
+
+.show {
+  flex: 1;
+}

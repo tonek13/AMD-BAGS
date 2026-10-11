@@ -44,6 +44,17 @@
   box-shadow: -1.5rem 0 4rem rgb(35 31 32 / 0.25);
 }
 
+/* Filters: slides in from the left */
+.drawerLeft {
+  position: fixed;
+  inset: 0 auto 0 0;
+  margin: 0;
+  width: min(26rem, 100vw);
+  height: 100dvh;
+  transform: translateX(-8%);
+  box-shadow: 1.5rem 0 4rem rgb(35 31 32 / 0.25);
+}
+
 /* Product details: a centred sheet on desktop, full-screen on phones */
 .modal {
   position: fixed;
