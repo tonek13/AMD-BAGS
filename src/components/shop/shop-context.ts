@@ -1,17 +1,24 @@
 "use client";
 
 import { createContext, useContext } from "react";
+import type { CartLineView, CartNotice } from "@/lib/cart-lines";
+import type { Formatters } from "@/lib/format";
 import type { CategoryOption, ColorOption, Product } from "@/types/catalog";
+import type { ShopSettings } from "@/types/settings";
 
-export interface CartLineView {
-  product: Product;
-  quantity: number;
-  /** False when the bag has become sold out since it was added. Excluded from totals and orders. */
-  available: boolean;
-  lineCents: number;
+export type { CartLineView, CartNotice };
+
+export interface CartRefreshResult {
+  /** False when the latest prices could not be fetched (offline, server error). */
+  ok: boolean;
+  /** True when the check found something different from what the customer was looking at. */
+  changed: boolean;
+  /** The bag as it stands after the check. */
+  lines: CartLineView[];
 }
 
-export interface ShopContextValue {
+export interface ShopContextValue extends Formatters {
+  settings: ShopSettings;
   products: Product[];
   categories: CategoryOption[];
   colors: ColorOption[];
@@ -24,6 +31,13 @@ export interface ShopContextValue {
   setQuantity: (slug: string, quantity: number) => void;
   removeFromCart: (slug: string) => void;
   clearCart: () => void;
+
+  /** Re-checks every bag in the cart against the live shop (prices, sold out, removed). */
+  refreshCart: () => Promise<CartRefreshResult>;
+  checkingCart: boolean;
+  /** What changed since the customer last looked, to be explained in the bag. */
+  notices: CartNotice[];
+  dismissNotices: () => void;
 
   cartOpen: boolean;
   openCart: () => void;

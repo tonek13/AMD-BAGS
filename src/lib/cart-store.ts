@@ -3,14 +3,17 @@
  *
  * Built for `useSyncExternalStore`: the server (and the first client render)
  * always see an empty cart, then React swaps in the stored cart without a
- * hydration mismatch. Only `{ slug, quantity }` is stored; names, prices and
- * stock always come from the catalogue, so they can never go stale.
+ * hydration mismatch. Only `{ slug, quantity, name }` is stored. Prices and stock always
+ * come from the catalogue (and the live check before ordering), so they can never go stale;
+ * the name is kept only so a bag that has since been removed can still be named to the customer.
  */
 import { siteConfig } from "@/config/site";
 
 export interface StoredLine {
   slug: string;
   quantity: number;
+  /** Name when it was added: used only to explain a bag that is no longer on the shop. */
+  name?: string;
 }
 
 const EMPTY: readonly StoredLine[] = Object.freeze([]);
@@ -38,12 +41,12 @@ function parse(raw: string | null): readonly StoredLine[] {
     const lines: StoredLine[] = [];
     for (const item of data) {
       if (!item || typeof item !== "object") continue;
-      const { slug, quantity } = item as Partial<StoredLine>;
+      const { slug, quantity, name } = item as Partial<StoredLine>;
       if (typeof slug !== "string" || seen.has(slug)) continue;
       if (typeof quantity !== "number" || !Number.isFinite(quantity)) continue;
       const q = Math.min(siteConfig.maxQuantityPerItem, Math.max(1, Math.floor(quantity)));
       seen.add(slug);
-      lines.push({ slug, quantity: q });
+      lines.push(typeof name === "string" && name.length <= 120 ? { slug, quantity: q, name } : { slug, quantity: q });
     }
     return lines.length ? lines : EMPTY;
   } catch {
@@ -95,19 +98,19 @@ export function subscribe(listener: () => void): () => void {
 
 const clamp = (q: number) => Math.min(siteConfig.maxQuantityPerItem, Math.max(0, Math.floor(q)));
 
-export function addItem(slug: string, quantity = 1) {
+export function addItem(slug: string, quantity = 1, name?: string) {
   const current = getSnapshot();
   const existing = current.find((l) => l.slug === slug);
   const next = existing
-    ? current.map((l) => (l.slug === slug ? { slug, quantity: clamp(l.quantity + quantity) } : l))
-    : [...current, { slug, quantity: clamp(quantity) }];
+    ? current.map((l) => (l.slug === slug ? { ...l, name: name ?? l.name, quantity: clamp(l.quantity + quantity) } : l))
+    : [...current, { slug, quantity: clamp(quantity), ...(name ? { name } : {}) }];
   commit(next.filter((l) => l.quantity > 0));
 }
 
 export function setQuantity(slug: string, quantity: number) {
   const q = clamp(quantity);
   const current = getSnapshot();
-  commit(q === 0 ? current.filter((l) => l.slug !== slug) : current.map((l) => (l.slug === slug ? { slug, quantity: q } : l)));
+  commit(q === 0 ? current.filter((l) => l.slug !== slug) : current.map((l) => (l.slug === slug ? { ...l, quantity: q } : l)));
 }
 
 export function removeItem(slug: string) {

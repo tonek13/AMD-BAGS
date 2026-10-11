@@ -1,14 +1,12 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import type { Product } from "@/types/catalog";
 import { gsap, registerGsap } from "@/lib/gsap";
-import { formatPrice } from "@/lib/format";
 import { handleAnchorClick } from "@/lib/scroll";
 import { MovingPhoto } from "@/components/motion/MovingPhoto";
-import { useShop } from "@/components/shop/shop-context";
 import { BagIllustration } from "./BagIllustration";
 import { storyStages } from "./stages";
+import { storyPhoto } from "@/data/story";
 import { buildStoryTimeline, resetStory } from "./timeline";
 import styles from "./YarnStory.module.css";
 
@@ -20,9 +18,8 @@ import styles from "./YarnStory.module.css";
  * reversible GSAP timeline with the scrollbar. With reduced motion (or if anything fails)
  * the visitor simply sees the finished illustration and all five steps as plain content.
  */
-export function YarnStory({ product }: { product: Product }) {
+export function YarnStory() {
   const root = useRef<HTMLElement>(null);
-  const { openProduct } = useShop();
 
   useEffect(() => {
     registerGsap();
@@ -109,7 +106,7 @@ export function YarnStory({ product }: { product: Product }) {
 
         <figure className={styles.card} data-s="card">
           <MovingPhoto
-            image={product.images[0]}
+            image={storyPhoto}
             ratio="4 / 4.6"
             sizes="(max-width: 52rem) 42vw, 22rem"
             quality={90}
@@ -118,10 +115,9 @@ export function YarnStory({ product }: { product: Product }) {
           />
           <figcaption className={styles.cardCaption}>
             <span className="eyebrow">The real thing</span>
-            <button type="button" className={styles.cardButton} onClick={() => openProduct(product.slug)}>
-              {product.name} · {formatPrice(product.price)}
-              <span className="sr-only"> – view details</span>
-            </button>
+            <a className={styles.cardButton} href="#collection" onClick={handleAnchorClick}>
+              See the collection
+            </a>
           </figcaption>
         </figure>
 

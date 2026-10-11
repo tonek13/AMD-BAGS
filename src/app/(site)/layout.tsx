@@ -3,7 +3,7 @@ import { Fraunces, Hanken_Grotesk } from "next/font/google";
 import "lenis/dist/lenis.css";
 import "./globals.css";
 import { siteConfig } from "@/config/site";
-import { getCategories, getColors, getProducts } from "@/lib/catalog";
+import { getCatalog, getShopSettings } from "@/lib/catalog";
 import { MotionRoot } from "@/components/motion/MotionRoot";
 import { ShopProvider } from "@/components/shop/ShopProvider";
 import { Header } from "@/components/site/Header";
@@ -24,15 +24,15 @@ const hanken = Hanken_Grotesk({
   display: "swap",
 });
 
-export const metadata: Metadata = {
-  title: { default: `${siteConfig.brandName} — ${siteConfig.tagline}`, template: `%s · ${siteConfig.brandName}` },
-  description: siteConfig.description,
-  openGraph: {
-    title: `${siteConfig.brandName} — ${siteConfig.tagline}`,
+export async function generateMetadata(): Promise<Metadata> {
+  const { brandName } = await getShopSettings();
+  const title = `${brandName} — ${siteConfig.tagline}`;
+  return {
+    title: { default: title, template: `%s · ${brandName}` },
     description: siteConfig.description,
-    type: "website",
-  },
-};
+    openGraph: { title, description: siteConfig.description, type: "website" },
+  };
+}
 
 export const viewport: Viewport = {
   themeColor: "#f6efe3",
@@ -46,8 +46,8 @@ export const viewport: Viewport = {
  */
 const motionBootScript = `(function(d){try{if(!window.matchMedia("(prefers-reduced-motion: reduce)").matches){d.classList.add("motion");setTimeout(function(){if(!d.classList.contains("motion-ready"))d.classList.remove("motion")},6000)}}catch(e){}})(document.documentElement)`;
 
-export default async function RootLayout({ children }: LayoutProps<"/">) {
-  const [products, categories, colors] = await Promise.all([getProducts(), getCategories(), getColors()]);
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const [{ products, categories, colors }, settings] = await Promise.all([getCatalog(), getShopSettings()]);
 
   return (
     <html lang="en" className={`${fraunces.variable} ${hanken.variable}`} suppressHydrationWarning>
@@ -59,7 +59,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
           Skip to content
         </a>
         <MotionRoot>
-          <ShopProvider products={products} categories={categories} colors={colors}>
+          <ShopProvider settings={settings} products={products} categories={categories} colors={colors}>
             <Header />
             {children}
           </ShopProvider>

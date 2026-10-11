@@ -2,7 +2,6 @@
 
 import { useEffect, useRef } from "react";
 import type { Product } from "@/types/catalog";
-import { formatPrice } from "@/lib/format";
 import { gsap, registerGsap, ScrollTrigger } from "@/lib/gsap";
 import { handleAnchorClick } from "@/lib/scroll";
 import { MovingPhoto } from "@/components/motion/MovingPhoto";
@@ -20,7 +19,7 @@ const SECTION_INK = "#231f20";
  */
 export function FeaturedBags({ products }: { products: Product[] }) {
   const root = useRef<HTMLElement>(null);
-  const { openProduct, addToCart, openCart, categories, colors } = useShop();
+  const { openProduct, addToCart, openCart, categories, colors, formatPrice } = useShop();
 
   useEffect(() => {
     registerGsap();
@@ -102,7 +101,10 @@ export function FeaturedBags({ products }: { products: Product[] }) {
       {products.map((p, i) => {
         const theme = p.featured!.theme;
         const flip = i % 2 === 1;
-        const colorLabel = colors.find((c) => c.id === p.color)?.label;
+        const colorLabel = p.colors
+          .map((id) => colors.find((c) => c.id === id)?.label)
+          .filter(Boolean)
+          .join(", ");
         const categoryLabel = categories.find((c) => c.id === p.category)?.label;
         const soldOut = p.availability === "sold-out";
 
@@ -158,14 +160,16 @@ export function FeaturedBags({ products }: { products: Product[] }) {
 
             <div className={styles.text}>
               <p className={`eyebrow ${styles.meta}`} data-rise data-prehide>
-                0{i + 1} · {categoryLabel} · {colorLabel}
+                {[`0${i + 1}`, categoryLabel, colorLabel].filter(Boolean).join(" · ")}
               </p>
               <h3 className={`display ${styles.name}`} data-rise data-prehide>
                 {p.name}
               </h3>
-              <p className={styles.tagline} data-rise data-prehide>
-                {p.tagline}
-              </p>
+              {p.summary && (
+                <p className={styles.tagline} data-rise data-prehide>
+                  {p.summary}
+                </p>
+              )}
               <div className={styles.row} data-rise data-prehide>
                 <p className={styles.priceText}>{formatPrice(p.price)}</p>
                 <AvailabilityBadge availability={p.availability} />

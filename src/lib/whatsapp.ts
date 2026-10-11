@@ -1,6 +1,3 @@
-import { siteConfig } from "@/config/site";
-import { formatMoney } from "@/lib/format";
-
 export interface OrderLine {
   name: string;
   quantity: number;
@@ -13,14 +10,22 @@ export function normalizeWhatsAppNumber(raw: string): string | null {
   return digits.length >= 8 && digits.length <= 15 ? digits : null;
 }
 
-/** Plain-text order message. The customer reviews it and presses Send in WhatsApp. */
-export function buildOrderMessage(lines: OrderLine[], totalCents: number): string {
+/**
+ * Plain-text order message. The customer reviews it and presses Send in WhatsApp.
+ * Prices passed in must be the freshly checked ones (see ShopProvider.refreshCart).
+ */
+export function buildOrderMessage(
+  brandName: string,
+  lines: OrderLine[],
+  totalCents: number,
+  formatMoney: (amount: number) => string,
+): string {
   const items = lines
     .map((l) => `• ${l.quantity} × ${l.name} — ${formatMoney(l.unitPrice * l.quantity)}`)
     .join("\n");
 
   return [
-    `Hello ${siteConfig.brandName}! I'd like to order:`,
+    `Hello ${brandName}! I'd like to order:`,
     "",
     items,
     "",

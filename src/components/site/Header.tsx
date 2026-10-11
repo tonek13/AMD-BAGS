@@ -1,15 +1,17 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import Image from "next/image";
 import Link from "next/link";
-import { navLinks, siteConfig } from "@/config/site";
+import { navLinks } from "@/config/site";
 import { gsap } from "@/lib/gsap";
 import { getLenis, handleAnchorClick, prefersReducedMotion } from "@/lib/scroll";
 import { useShop } from "@/components/shop/shop-context";
 import styles from "./Header.module.css";
 
 export function Header() {
-  const { count, openCart } = useShop();
+  const { count, openCart, settings } = useShop();
+  const { brandName, logo } = settings;
   const badge = useRef<HTMLSpanElement>(null);
   const previous = useRef(count);
 
@@ -31,12 +33,24 @@ export function Header() {
   return (
     <header className={styles.header}>
       <div className={styles.bar}>
-        <Link href="/" className={styles.brand} onClick={toTop} aria-label={`${siteConfig.brandName} – back to top`}>
-          <svg className={styles.mark} viewBox="0 0 28 28" aria-hidden="true">
-            <circle cx="14" cy="14" r="11.5" fill="none" stroke="currentColor" strokeWidth="2.2" />
-            <path d="M4 11c7 4 13 4 20 0M3 16c8 5 14 5 22 0M8 6c-3 6-3 10 0 16M20 6c3 6 3 10 0 16" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" opacity=".7" />
-          </svg>
-          <span className={styles.name}>{siteConfig.brandName}</span>
+        <Link href="/" className={styles.brand} onClick={toTop} aria-label={`${brandName} – back to top`}>
+          {logo ? (
+            <Image
+              className={styles.logo}
+              src={logo.src}
+              alt=""
+              width={logo.width}
+              height={logo.height}
+              sizes="120px"
+              style={{ height: "2rem", width: "auto" }}
+            />
+          ) : (
+            <svg className={styles.mark} viewBox="0 0 28 28" aria-hidden="true">
+              <circle cx="14" cy="14" r="11.5" fill="none" stroke="currentColor" strokeWidth="2.2" />
+              <path d="M4 11c7 4 13 4 20 0M3 16c8 5 14 5 22 0M8 6c-3 6-3 10 0 16M20 6c3 6 3 10 0 16" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" opacity=".7" />
+            </svg>
+          )}
+          <span className={styles.name}>{brandName}</span>
         </Link>
 
         <nav className={styles.nav} aria-label="Primary">

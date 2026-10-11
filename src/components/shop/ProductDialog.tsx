@@ -3,8 +3,6 @@
 import { useState } from "react";
 import Image from "next/image";
 import type { Product } from "@/types/catalog";
-import { siteConfig } from "@/config/site";
-import { formatPrice } from "@/lib/format";
 import { AvailabilityBadge } from "./AvailabilityBadge";
 import { ModalDialog } from "./ModalDialog";
 import { QuantityStepper } from "./QuantityStepper";
@@ -33,7 +31,7 @@ export function ProductDialog() {
 }
 
 function ProductDetails({ product, onClose }: { product: Product; onClose: () => void }) {
-  const { addToCart, openCart, categories, colors } = useShop();
+  const { addToCart, openCart, categories, colors, formatPrice, settings } = useShop();
   const [quantity, setQuantity] = useState(1);
   const [index, setIndex] = useState(0);
 
@@ -41,7 +39,10 @@ function ProductDetails({ product, onClose }: { product: Product; onClose: () =>
   const total = product.images.length;
   const image = product.images[index];
   const category = categories.find((c) => c.id === product.category)?.label;
-  const color = colors.find((c) => c.id === product.color)?.label;
+  const colorLabels = product.colors
+    .map((id) => colors.find((c) => c.id === id)?.label)
+    .filter((label): label is string => !!label)
+    .join(", ");
 
   const go = (next: number) => setIndex((next + total) % total);
 
@@ -121,24 +122,25 @@ function ProductDetails({ product, onClose }: { product: Product; onClose: () =>
       </div>
 
       <div className={styles.info}>
-        <p className={`eyebrow ${styles.meta}`}>
-          {category} · {color}
-        </p>
+        {(category || colorLabels) && (
+          <p className={`eyebrow ${styles.meta}`}>{[category, colorLabels].filter(Boolean).join(" · ")}</p>
+        )}
         <h2 className={`display ${styles.name}`}>{product.name}</h2>
-        <p className={styles.tagline}>{product.tagline}</p>
 
         <div className={styles.priceRow}>
           <p className={styles.price}>{formatPrice(product.price)}</p>
           <AvailabilityBadge availability={product.availability} />
         </div>
 
-        <p className={styles.description}>{product.description}</p>
+        {product.description && <p className={styles.description}>{product.description}</p>}
 
-        <ul className={styles.details}>
-          {product.details.map((d) => (
-            <li key={d}>{d}</li>
-          ))}
-        </ul>
+        {product.details && product.details.length > 0 && (
+          <ul className={styles.details}>
+            {product.details.map((d) => (
+              <li key={d}>{d}</li>
+            ))}
+          </ul>
+        )}
 
         <div className={styles.buy}>
           {soldOut ? (
@@ -159,9 +161,7 @@ function ProductDetails({ product, onClose }: { product: Product; onClose: () =>
                 </button>
               </div>
               <p className={styles.note}>
-                {product.availability === "made-to-order"
-                  ? "Made to order – the maker will confirm timing when you send your order on WhatsApp."
-                  : `Orders are sent to ${siteConfig.brandName} on WhatsApp – no payment on this site.`}
+                {`Orders are sent to ${settings.brandName} on WhatsApp – no payment on this site.`}
               </p>
             </>
           )}

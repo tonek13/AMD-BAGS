@@ -3,8 +3,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import type { ColorOption, Product } from "@/types/catalog";
-import { siteConfig } from "@/config/site";
-import { formatPrice } from "@/lib/format";
 import { Flip, gsap, registerGsap, ScrollTrigger } from "@/lib/gsap";
 import { useIsomorphicLayoutEffect } from "@/lib/hooks";
 import { prefersReducedMotion } from "@/lib/scroll";
@@ -34,7 +32,7 @@ interface Chip {
 }
 
 export function Collection({ products }: { products: Product[] }) {
-  const { categories, colors, openProduct, addToCart, openCart } = useShop();
+  const { categories, colors, openProduct, addToCart, openCart, formatPrice, settings } = useShop();
   const [filters, setFilters] = useState<FilterState>(emptyFilters);
   const [sort, setSort] = useState<SortKey>("featured");
   const [density, setDensity] = useState<Density>("standard");
@@ -122,15 +120,26 @@ export function Collection({ products }: { products: Product[] }) {
           <h2 id="collection-title" className={`display ${styles.title}`}>
             Every bag, <em>stitched by hand.</em>
           </h2>
-          {siteConfig.showReviewNotes && (
+          {settings.demo && (
             <p className={styles.reviewNote}>
-              Design review build &mdash; bag names, prices and availability are placeholders. The photographs are the real pieces.
+              Demo mode &mdash; these are sample bags, not the shop&rsquo;s real products. Names, prices and availability are placeholders.
+              The photographs are the real pieces.
             </p>
           )}
         </header>
       </div>
 
+      {products.length === 0 && (
+        <div className={styles.inner}>
+          <div className={styles.empty}>
+            <p className={styles.emptyTitle}>New bags are on their way.</p>
+            <p>The collection is being restocked. Please check back soon.</p>
+          </div>
+        </div>
+      )}
+
       {/* Sticky toolbar: Filters button, quick colour swatches, sort and photo size */}
+      {products.length > 0 && (
       <div className={styles.toolbar}>
         <div className={styles.toolbarInner}>
           <button
@@ -199,7 +208,9 @@ export function Collection({ products }: { products: Product[] }) {
           </div>
         </div>
       </div>
+      )}
 
+      {products.length > 0 && (
       <div className={styles.inner}>
         <div className={styles.results}>
           <p className={styles.status} role="status" aria-live="polite">
@@ -234,7 +245,11 @@ export function Collection({ products }: { products: Product[] }) {
               product={p}
               hidden={!matchesFilters(p, filters)}
               categoryLabel={categories.find((c) => c.id === p.category)?.label ?? ""}
-              colorLabel={colors.find((c) => c.id === p.color)?.label ?? ""}
+              colorLabel={p.colors
+                .map((id) => colors.find((c) => c.id === id)?.label)
+                .filter(Boolean)
+                .join(", ")}
+              formatPrice={formatPrice}
               onOpen={() => openProduct(p.slug)}
               onAdd={() => {
                 addToCart(p.slug, 1);
@@ -253,6 +268,7 @@ export function Collection({ products }: { products: Product[] }) {
           </div>
         )}
       </div>
+      )}
 
       <FilterPanel
         open={panelOpen}
@@ -274,11 +290,12 @@ interface ProductCardProps {
   hidden: boolean;
   categoryLabel: string;
   colorLabel: string;
+  formatPrice: (amount: number) => string;
   onOpen: () => void;
   onAdd: () => void;
 }
 
-function ProductCard({ product, hidden, categoryLabel, colorLabel, onOpen, onAdd }: ProductCardProps) {
+function ProductCard({ product, hidden, categoryLabel, colorLabel, formatPrice, onOpen, onAdd }: ProductCardProps) {
   const [cover, alt] = product.images;
   const soldOut = product.availability === "sold-out";
   const focus = (img: typeof cover) => `${img.focal?.x ?? 50}% ${img.focal?.y ?? 50}%`;
@@ -321,9 +338,7 @@ function ProductCard({ product, hidden, categoryLabel, colorLabel, onOpen, onAdd
             <h3 className={styles.name}>{product.name}</h3>
             <p className={styles.price}>{formatPrice(product.price)}</p>
           </div>
-          <p className={styles.sub}>
-            {colorLabel} · {categoryLabel}
-          </p>
+          <p className={styles.sub}>{[colorLabel, categoryLabel].filter(Boolean).join(" · ")}</p>
           <button type="button" className={styles.add} disabled={soldOut} onClick={onAdd}>
             {soldOut ? "Sold out" : "Add to bag"}
             <span className="sr-only"> – {product.name}</span>

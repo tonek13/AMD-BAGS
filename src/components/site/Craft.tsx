@@ -4,15 +4,16 @@ import { useEffect, useRef } from "react";
 import type { CraftMoment } from "@/data/craft";
 import { gsap, registerGsap } from "@/lib/gsap";
 import { handleAnchorClick } from "@/lib/scroll";
+import { renderEmphasis } from "@/lib/text";
 import { MovingPhoto } from "@/components/motion/MovingPhoto";
+import { useShop } from "@/components/shop/shop-context";
 import styles from "./Craft.module.css";
-
-// PROVISIONAL copy – the owner should rewrite this in their own voice.
-const QUOTE =
-  "Every bag is hooked by hand, loop by loop and row by row, so it arrives with a little of the maker still in it.";
 
 export function Craft({ moments }: { moments: CraftMoment[] }) {
   const root = useRef<HTMLElement>(null);
+  // Heading and statement come from Shop Settings (with built-in defaults for empty fields).
+  const { settings } = useShop();
+  const quote = settings.craftText;
 
   useEffect(() => {
     registerGsap();
@@ -43,7 +44,7 @@ export function Craft({ moments }: { moments: CraftMoment[] }) {
     });
 
     return () => mm.revert();
-  }, []);
+  }, [quote]);
 
   return (
     <section ref={root} id="craft" className={styles.craft} aria-labelledby="craft-title" data-surface="dark">
@@ -51,12 +52,12 @@ export function Craft({ moments }: { moments: CraftMoment[] }) {
         <header className={styles.head}>
           <p className={`eyebrow ${styles.kicker}`}>Our craft</p>
           <h2 id="craft-title" className={`display ${styles.title}`}>
-            Slow stitches, <em>chunky</em> results.
+            {renderEmphasis(settings.craftHeading)}
           </h2>
         </header>
 
         <p className={styles.quote} data-quote data-prehide>
-          {QUOTE.split(" ").map((word, i) => (
+          {quote.split(" ").map((word, i) => (
             <span key={i} data-word>
               {word}{" "}
             </span>

@@ -1,12 +1,12 @@
-import type { CategoryId, ColorId, Product } from "@/types/catalog";
+import type { Product } from "@/types/catalog";
 
 export type SortKey = "featured" | "price-asc" | "price-desc" | "name";
 export type Density = "standard" | "large";
 export type FilterGroup = "categories" | "colors";
 
 export interface FilterState {
-  categories: CategoryId[];
-  colors: ColorId[];
+  categories: string[];
+  colors: string[];
   hideSoldOut: boolean;
 }
 
@@ -21,8 +21,8 @@ export const sortOptions: { id: SortKey; label: string }[] = [
 
 /** Within a group the options are OR-ed; between groups they are AND-ed. `skip` leaves one group out (for facet counts). */
 export function matchesFilters(product: Product, filters: FilterState, skip?: FilterGroup): boolean {
-  if (skip !== "categories" && filters.categories.length > 0 && !filters.categories.includes(product.category)) return false;
-  if (skip !== "colors" && filters.colors.length > 0 && !filters.colors.includes(product.color)) return false;
+  if (skip !== "categories" && filters.categories.length > 0 && !(product.category && filters.categories.includes(product.category))) return false;
+  if (skip !== "colors" && filters.colors.length > 0 && !product.colors.some((c) => filters.colors.includes(c))) return false;
   if (filters.hideSoldOut && product.availability === "sold-out") return false;
   return true;
 }
@@ -30,7 +30,7 @@ export function matchesFilters(product: Product, filters: FilterState, skip?: Fi
 /** How many bags selecting this option would show, given the choices already made in the other groups. */
 export function facetCount(products: Product[], filters: FilterState, group: FilterGroup, id: string): number {
   return products.filter(
-    (p) => matchesFilters(p, filters, group) && (group === "categories" ? p.category === id : p.color === id),
+    (p) => matchesFilters(p, filters, group) && (group === "categories" ? p.category === id : p.colors.includes(id)),
   ).length;
 }
 

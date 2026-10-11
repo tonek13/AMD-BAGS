@@ -2,11 +2,11 @@ import type { CategoryOption, ColorOption, Product } from "@/types/catalog";
 
 /**
  * ─────────────────────────────────────────────────────────────────────────
- *  PROVISIONAL CATALOGUE – for the design review only.
- *  Product names, taglines, descriptions, prices and availability below are
- *  placeholders. The photographs are the owner's real photos.
- *  When Sanity is connected, replace the functions in src/lib/catalog.ts;
- *  this file can then be deleted.
+ *  DEMO DATA – only used when SHOP_DATA_SOURCE=demo.
+ *  These are sample bags for design review: names, descriptions, prices and
+ *  availability are placeholders. The photographs are the owner's real photos.
+ *  The connected shop never falls back to this file: it reads Sanity only
+ *  (see src/lib/catalog.ts).
  * ─────────────────────────────────────────────────────────────────────────
  */
 
@@ -32,13 +32,13 @@ export const products: Product[] = [
     id: "p-001",
     slug: "apricot-arch-bag",
     name: "Apricot Arch",
-    tagline: "A braided arch handle on soft peach ribs.",
+    summary: "A braided arch handle on soft peach ribs.",
     description:
       "A small top-handle bag worked in vertical ribs, with a rolled, braided arch handle that sits comfortably in the hand or the crook of an arm. Gold-toned rings join the handle to the body.",
     details: ["Hand crocheted", "Braided top handle", "Gold-toned rings"],
     price: 88,
     category: "top-handle",
-    color: "peach",
+    colors: ["peach"],
     availability: "in-stock",
     images: [
       {
@@ -55,13 +55,13 @@ export const products: Product[] = [
     id: "p-002",
     slug: "noir-nest-bag",
     name: "Noir Nest",
-    tagline: "Rounded, deep black, with twin braided handles.",
+    summary: "Rounded, deep black, with twin braided handles.",
     description:
       "A plump rounded bag in black with two braided handles joined by gold-toned rings. The chunky stitches catch the light and keep their shape.",
     details: ["Hand crocheted", "Two braided handles", "Gold-toned rings", "Soft, rounded shape"],
     price: 92,
     category: "top-handle",
-    color: "black",
+    colors: ["black"],
     availability: "in-stock",
     images: [
       {
@@ -77,13 +77,13 @@ export const products: Product[] = [
     id: "p-003",
     slug: "bordeaux-clutch",
     name: "Bordeaux Clutch",
-    tagline: "A deep burgundy clutch with a cut-out handle.",
+    summary: "A deep burgundy clutch with a cut-out handle.",
     description:
       "A relaxed, wide clutch in rich burgundy with an integrated cut-out handle. Dense, chunky stitches give it a sculpted shape that holds on its own.",
     details: ["Hand crocheted", "Integrated cut-out handle", "Rich burgundy yarn", "Sculpted, structured shape"],
     price: 78,
     category: "clutch",
-    color: "burgundy",
+    colors: ["burgundy"],
     availability: "in-stock",
     images: [
       {
@@ -107,14 +107,14 @@ export const products: Product[] = [
     id: "p-004",
     slug: "creme-crescent-bag",
     name: "Crème Crescent",
-    tagline: "A half-moon tote with wooden handles and a tassel.",
+    summary: "A half-moon tote with wooden handles and a tassel.",
     description:
       "A generous half-moon tote in warm cream with smooth wooden handles and a golden tassel. Tightly worked stitches give the body a woven, structured look.",
     details: ["Hand crocheted", "Wooden handles", "Golden tassel", "Roomy half-moon body"],
     price: 118,
     category: "tote",
-    color: "cream",
-    availability: "made-to-order",
+    colors: ["cream"],
+    availability: "in-stock",
     images: [
       {
         src: img("cream-crescent-bag-tassel.jpg"),
@@ -130,13 +130,13 @@ export const products: Product[] = [
     id: "p-005",
     slug: "cloud-clutch",
     name: "Cloud Clutch",
-    tagline: "Soft white puff stitches with a braided top edge.",
+    summary: "Soft white puff stitches with a braided top edge.",
     description:
       "A bright white clutch worked in puffy, textured stitches with a braided edge around the carry opening. Light, airy and easy to dress up or down.",
     details: ["Hand crocheted", "Braided carry opening", "Puff-stitch texture", "Bright white yarn"],
     price: 74,
     category: "clutch",
-    color: "white",
+    colors: ["white"],
     availability: "sold-out",
     images: [
       {
@@ -152,13 +152,13 @@ export const products: Product[] = [
     id: "p-006",
     slug: "cherry-ripple-basket",
     name: "Cherry Ripple",
-    tagline: "Burgundy and cream stitches in a small basket bag.",
+    summary: "Burgundy and cream stitches in a small basket bag.",
     description:
       "A structured little basket bag worked in alternating burgundy and cream stitches that ripple around the body, finished with a braided carry handle.",
     details: ["Hand crocheted", "Two-tone stitch pattern", "Braided carry handle", "Open basket shape"],
     price: 84,
     category: "tote",
-    color: "burgundy-cream",
+    colors: ["burgundy-cream"],
     availability: "in-stock",
     images: [
       {

@@ -3,7 +3,6 @@
 import { useEffect, useRef } from "react";
 import type { Product } from "@/types/catalog";
 import { siteConfig } from "@/config/site";
-import { formatPrice } from "@/lib/format";
 import { gsap, registerGsap } from "@/lib/gsap";
 import { handleAnchorClick } from "@/lib/scroll";
 import { MovingPhoto } from "@/components/motion/MovingPhoto";
@@ -11,13 +10,15 @@ import { useShop } from "@/components/shop/shop-context";
 import styles from "./Hero.module.css";
 
 interface HeroProps {
-  primary: Product;
-  secondary: Product;
+  /** The two bags in the opening composition. Either may be missing when the shop has fewer than two. */
+  primary?: Product;
+  secondary?: Product;
 }
 
 export function Hero({ primary, secondary }: HeroProps) {
   const root = useRef<HTMLElement>(null);
-  const { openProduct } = useShop();
+  const { openProduct, formatPrice, settings } = useShop();
+  const headline = settings.heroHeadline;
 
   useEffect(() => {
     registerGsap();
@@ -61,25 +62,17 @@ export function Hero({ primary, secondary }: HeroProps) {
           </p>
 
           <h1 id="hero-title" className={`display ${styles.title}`}>
-            <span className={styles.mask} data-line-shift="left">
-              <span className={styles.line} data-hero="line" data-prehide>
-                Made slowly,
+            {headline.map((line, i) => (
+              <span key={i} className={styles.mask} data-line-shift={i % 2 === 0 ? "left" : "right"}>
+                <span className={styles.line} data-hero="line" data-prehide>
+                  {i === headline.length - 1 ? <em>{line}</em> : line}
+                </span>
               </span>
-            </span>
-            <span className={styles.mask} data-line-shift="right">
-              <span className={styles.line} data-hero="line" data-prehide>
-                carried
-              </span>
-            </span>
-            <span className={styles.mask} data-line-shift="left">
-              <span className={styles.line} data-hero="line" data-prehide>
-                <em>everywhere.</em>
-              </span>
-            </span>
+            ))}
           </h1>
 
           <p className={styles.lede} data-hero="fade" data-prehide>
-            Chunky crochet bags in burgundy, cream, peach and black &mdash; every one hooked by hand, one stitch at a time.
+            {settings.heroIntro}
           </p>
 
           <div className={styles.ctas} data-hero="fade" data-prehide>
@@ -94,6 +87,7 @@ export function Hero({ primary, secondary }: HeroProps) {
         </div>
 
         <div className={styles.collage}>
+          {primary && (
           <div className={styles.main} data-speed="slow">
             <MovingPhoto
               image={primary.images[0]}
@@ -113,7 +107,9 @@ export function Hero({ primary, secondary }: HeroProps) {
               <span className="sr-only"> – view details</span>
             </button>
           </div>
+          )}
 
+          {secondary && (
           <div className={styles.second} data-speed="fast">
             <MovingPhoto
               image={secondary.images[0]}
@@ -126,6 +122,7 @@ export function Hero({ primary, secondary }: HeroProps) {
               className={styles.secondPhoto}
             />
           </div>
+          )}
 
           <div className={styles.badge} data-hero="pop" data-prehide aria-hidden="true">
             <svg viewBox="0 0 160 160" className={styles.badgeSpin}>

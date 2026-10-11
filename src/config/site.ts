@@ -1,64 +1,60 @@
 /**
- * Single source of truth for brand + shop settings.
- * Everything the owner is likely to change lives here.
+ * Static site configuration and DEFAULTS.
  *
- * PROVISIONAL values are marked so they are easy to find in review.
+ * Everything the owner edits day to day (products, collections, brand name, logo, currency,
+ * WhatsApp number, contact details, homepage and craft text) lives in Sanity: see
+ * src/sanity/schemaTypes/shopSettings.ts. The values here are only
+ *   • technical constants of the storefront, and
+ *   • fallback wording used when a Shop Settings field is still empty.
+ *
+ * The WhatsApp number is deliberately NOT defaulted for the connected shop: it must come from
+ * Shop Settings, otherwise ordering shows the copy-the-message fallback. `demoWhatsappNumber`
+ * is used only in explicit demo mode (SHOP_DATA_SOURCE=demo).
  */
 export interface SiteConfig {
   brandName: string;
   tagline: string;
   description: string;
-  whatsappNumber: string;
   currency: string;
   locale: string;
   maxQuantityPerItem: number;
-  contact: { instagram: string; email: string; location: string };
-  heroProducts: { primary: string; secondary: string };
-  storyProduct: string;
-  showReviewNotes: boolean;
   cartStorageKey: string;
+  demoWhatsappNumber: string;
+  defaults: {
+    heroHeadline: string[];
+    heroIntro: string;
+    craftHeading: string;
+    craftText: string;
+  };
 }
 
 export const siteConfig: SiteConfig = {
-  /** Brand name, as given by the owner. Change it here and it updates everywhere. */
   brandName: "MaisonHook",
   tagline: "Handmade crochet bags",
   description:
     "Chunky, hand-crocheted bags made slowly in small batches. Browse the collection and order by WhatsApp.",
 
-  /**
-   * Owner's WhatsApp number (provided by the owner). Any format works – spaces, "+" and
-   * dashes are stripped; the country code must come first. Leave empty to fall back to the
-   * order-message preview with a Copy button (nothing is sent anywhere).
-   */
-  whatsappNumber: "+961 81 616 199",
-
-  /** PROVISIONAL – currency for the sample prices (ISO 4217) and number format locale. */
   currency: "USD",
+  /** Number format locale. Fixed so server and browser always format prices identically. */
   locale: "en-US",
 
   /** Most of one bag a customer can add in a single order. */
   maxQuantityPerItem: 10,
 
-  /** Optional contact lines for the footer. Empty values are not shown. */
-  contact: {
-    instagram: "", // handle only, e.g. "maisonhook"
-    email: "",
-    location: "",
-  },
-
-  /**
-   * Which products appear in the opening composition and in the scroll story.
-   * Values are product slugs from src/data/products.ts.
-   */
-  heroProducts: { primary: "cherry-ripple-basket", secondary: "apricot-arch-bag" },
-  storyProduct: "bordeaux-clutch",
-
-  /** Shows a small "sample names and prices" note for the design review. Set false to hide. */
-  showReviewNotes: true,
-
   /** localStorage key for the cart. */
   cartStorageKey: "maisonhook.cart.v1",
+
+  /** Number used by the sample data in demo mode only. */
+  demoWhatsappNumber: "+961 81 616 199",
+
+  defaults: {
+    heroHeadline: ["Made slowly,", "carried", "everywhere."],
+    heroIntro:
+      "Chunky crochet bags, every one hooked by hand, one stitch at a time.",
+    craftHeading: "Slow stitches, *chunky* results.",
+    craftText:
+      "Every bag is hooked by hand, loop by loop and row by row, so it arrives with a little of the maker still in it.",
+  },
 };
 
 export const navLinks = [

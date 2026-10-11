@@ -245,3 +245,37 @@
   max-width: 24ch;
   color: var(--ink-soft);
 }
+
+/* Shown when the live check found something different from what the customer was looking at */
+.notice {
+  margin: 0.9rem 1.4rem 0;
+  padding: 0.85rem 0.95rem;
+  border-left: 3px solid var(--burgundy);
+  background: rgb(107 22 49 / 0.08);
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+.noticeTitle {
+  margin: 0 0 0.3rem;
+  font-weight: 700;
+}
+.notice ul {
+  margin: 0;
+  padding-left: 1.1rem;
+}
+.noticeClose {
+  margin-top: 0.5rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+.error {
+  color: var(--burgundy);
+  font-weight: 600;
+}
