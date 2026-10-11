@@ -109,7 +109,7 @@ export function YarnStory({ product }: { product: Product }) {
 
         <figure className={styles.card} data-s="card">
           <MovingPhoto
-            image={product.images[1] ?? product.images[0]}
+            image={product.images[0]}
             ratio="4 / 4.6"
             sizes="(max-width: 52rem) 42vw, 22rem"
             quality={90}
