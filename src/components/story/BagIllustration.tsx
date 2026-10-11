@@ -1,16 +1,15 @@
-import { bag, shade, STITCH_PATH, STITCH_STROKE, VIEW, CX } from "./bagGeometry";
+import { bag, shade, STITCH_RIBBONS, VIEW, CX } from "./bagGeometry";
 
 /**
- * The yarn-to-bag illustration. Pure markup: it renders as the COMPLETED bag by
- * default (so reduced-motion and no-JS visitors see the finished piece) and the
- * story timeline sets the starting state and plays it forward.
+ * The yarn-to-bag illustration, modelled on the real Bordeaux Clutch (wide, low, plump
+ * single-crochet stitches, rolled top edge, cut-out handle). Pure markup: it renders as the
+ * COMPLETED bag by default (so reduced-motion and no-JS visitors see the finished piece) and
+ * the story timeline sets the starting state and plays it forward.
  *
  * Elements the timeline drives carry a `data-s` hook.
  */
 export function BagIllustration() {
   const { rows, rim, foundation, strand, handle } = bag;
-  const ringTop = handle.p0;
-  const ringTopR = handle.p3;
 
   return (
     <svg
@@ -28,46 +27,29 @@ export function BagIllustration() {
           <stop offset="1" stopColor="#1a0509" stopOpacity="0" />
         </radialGradient>
         <linearGradient id="story-interior" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="#4a1226" />
-          <stop offset="1" stopColor="#12030a" />
+          <stop offset="0" stopColor="#3a0e1c" />
+          <stop offset="1" stopColor="#0f0308" />
         </linearGradient>
       </defs>
 
       {/* ground shadow */}
-      <ellipse data-s="shadow" cx={CX} cy={bag.rows[0].cy + bag.rows[0].ry + 26} rx="285" ry="40" fill="url(#story-shadow)" />
+      <ellipse data-s="shadow" cx={CX} cy={foundation.cy + foundation.ry + 20} rx="455" ry="40" fill="url(#story-shadow)" />
 
-      {/* 1 · the loose strand */}
+      {/* 1 · the loose strand (only exists mid-story) */}
       <g data-s="strand" data-static-hidden fill="none" strokeLinecap="round" strokeLinejoin="round">
         <path data-s="strand-path" d={strand.d} stroke={shade(0.3)} strokeWidth="27" />
-        <path data-s="strand-path" d={strand.d} stroke={shade(2.2)} strokeWidth="21" />
-        <path data-s="strand-path" d={strand.d} stroke={shade(4.6)} strokeWidth="5" opacity=".85" transform="translate(-3 -4)" />
+        <path data-s="strand-path" d={strand.d} stroke={shade(2.3)} strokeWidth="21" />
+        <path data-s="strand-path" d={strand.d} stroke={shade(4.8)} strokeWidth="5" opacity=".85" transform="translate(-3 -4)" />
       </g>
 
-      {/* 2 · the foundation coil */}
+      {/* 2 · the foundation coil, which stays as the rolled lip under the first row */}
       <g data-s="ring" fill="none" strokeLinecap="round" strokeLinejoin="round">
-        <path data-s="ring-path" d={foundation.d} stroke={shade(0.3)} strokeWidth="27" />
-        <path data-s="ring-path" d={foundation.d} stroke={shade(2.2)} strokeWidth="21" />
-        <path data-s="ring-path" d={foundation.d} stroke={shade(4.6)} strokeWidth="5" opacity=".85" transform="translate(-3 -4)" />
+        <path data-s="ring-path" d={foundation.d} stroke={shade(0.3)} strokeWidth="29" />
+        <path data-s="ring-path" d={foundation.d} stroke={shade(2.5)} strokeWidth="23" />
+        <path data-s="ring-path" d={foundation.d} stroke={shade(4.8)} strokeWidth="5" opacity=".85" transform="translate(-3 -4)" />
       </g>
 
-      {/* the open mouth of the bag */}
-      <g data-s="interior">
-        <ellipse cx={rim.cx} cy={rim.cy} rx={rim.innerRx} ry={rim.innerRy} fill="url(#story-interior)" />
-        {[0.1, 0.42, 0.74].map((k) => (
-          <path
-            key={k}
-            d={`M${rim.cx - rim.innerRx * (0.96 - k * 0.2)} ${rim.cy + 4 + k * 16} A${rim.innerRx * (0.96 - k * 0.2)} ${rim.innerRy * (0.74 - k * 0.1)} 0 0 1 ${rim.cx + rim.innerRx * (0.96 - k * 0.2)} ${rim.cy + 4 + k * 16}`}
-            fill="none"
-            stroke={shade(1.7 - k)}
-            strokeWidth="11"
-            strokeLinecap="round"
-            strokeDasharray="20 15"
-            opacity=".55"
-          />
-        ))}
-      </g>
-
-      {/* 3 · rows of stitches, bottom to top */}
+      {/* 3 · rows of plump stitches, bottom to top */}
       <g data-s="body">
         {rows.map((row) => (
           <g key={row.index} data-s="row" data-row={row.index}>
@@ -76,18 +58,21 @@ export function BagIllustration() {
               data-dir={row.leftToRight ? "ltr" : "rtl"}
               d={row.arc}
               fill="none"
-              stroke={shade(0.5 + row.index * 0.04)}
-              strokeWidth="58"
+              stroke="#16040a"
+              strokeWidth="50"
               strokeLinecap="round"
             />
             {row.stitches.map((s, k) => (
               <g key={k} transform={`translate(${s.x} ${s.y}) rotate(${s.rotate})`}>
                 <g data-s="stitch" data-row={row.index} data-u={s.u.toFixed(3)}>
-                  <g transform={`scale(${s.scaleX} 1)`} fill="none" strokeLinecap="round" strokeLinejoin="round">
-                    <path d={STITCH_PATH} stroke={s.shadow} strokeWidth={STITCH_STROKE + 4} opacity=".7" transform="translate(3 5)" />
-                    <path d={STITCH_PATH} stroke={s.body} strokeWidth={STITCH_STROKE} />
-                    <path d="M-1 -8 L1 13" stroke={s.crease} strokeWidth="4.5" opacity=".6" />
-                    <path d={STITCH_PATH} stroke={s.highlight} strokeWidth="6.5" opacity=".55" transform="translate(-4 -5) scale(.8)" />
+                  <g transform={`scale(${s.scale})`} fill="none" strokeLinecap="round" strokeLinejoin="round">
+                    {STITCH_RIBBONS.map((d, r) => (
+                      <g key={r}>
+                        <path d={d} stroke={s.shadow} strokeWidth="21" transform="translate(1.5 2.5)" />
+                        <path d={d} stroke={s.body} strokeWidth="16.5" />
+                        <path d={d} stroke={s.highlight} strokeWidth="4.5" opacity=".55" transform="translate(-3.2 -2)" />
+                      </g>
+                    ))}
                   </g>
                 </g>
               </g>
@@ -96,60 +81,32 @@ export function BagIllustration() {
         ))}
       </g>
 
-      {/* rolled rim */}
+      {/* rolled, braided top edge */}
       <g data-s="rim" fill="none" strokeLinecap="round">
-        <path data-s="rim-path" d={rim.ring} stroke={shade(0.4)} strokeWidth="32" />
-        <path data-s="rim-path" d={rim.ring} stroke={shade(3.1)} strokeWidth="26" />
-        <path data-s="rim-ticks" d={rim.ring} stroke="#12030a" strokeWidth="26" strokeDasharray="3 9" strokeLinecap="butt" opacity=".22" />
-        <path data-s="rim-path" d={rim.ring} stroke={shade(5.4)} strokeWidth="5.5" opacity=".8" transform="translate(-2 -5)" />
+        <path data-s="rim-path" d={rim.d} stroke={shade(0.35)} strokeWidth="36" />
+        <path data-s="rim-path" d={rim.d} stroke={shade(3.1)} strokeWidth="29" />
+        <path data-s="rim-ticks" d={rim.d} stroke="#12030a" strokeWidth="29" strokeDasharray="3 9" strokeLinecap="butt" opacity=".24" />
+        <path data-s="rim-path" d={rim.d} stroke={shade(5.2)} strokeWidth="5" opacity=".75" transform="translate(-2 -6)" />
       </g>
 
-      {/* 4 · braided handle */}
+      {/* 4 · the cut-out handle: a dark opening framed by a braided band */}
+      <path data-s="interior" d={handle.d} fill="url(#story-interior)" />
       <g data-s="handle" fill="none" strokeLinecap="round" strokeLinejoin="round">
-        <path data-s="handle-path" d={handle.d} stroke={shade(0.2)} strokeWidth="47" />
-        <path data-s="handle-path" d={handle.d} stroke={shade(2.5)} strokeWidth="40" />
+        <path data-s="handle-path" d={handle.d} stroke={shade(0.3)} strokeWidth="36" />
+        <path data-s="handle-path" d={handle.d} stroke={shade(2.9)} strokeWidth="29" />
         {handle.segments.map((seg, k) => (
           <g key={k} transform={`translate(${seg.x} ${seg.y}) rotate(${seg.angle})`}>
             <g data-s="twist" data-u={seg.u.toFixed(3)}>
-              <path d="M-19 0H19" stroke={shade(0.7)} strokeWidth="15" opacity=".6" transform="translate(2 3)" />
-              <path d="M-19 0H19" stroke={shade(3.5)} strokeWidth="13" />
-              <path d="M-12 -2.6H11" stroke={shade(5.3)} strokeWidth="3.4" opacity=".7" />
+              <path d="M-14 0H14" stroke={shade(0.8)} strokeWidth="12" opacity=".6" transform="translate(2 3)" />
+              <path d="M-14 0H14" stroke={shade(3.8)} strokeWidth="10.5" />
+              <path d="M-9 -2.2H8" stroke={shade(5.4)} strokeWidth="3" opacity=".7" />
             </g>
           </g>
         ))}
-        <path data-s="handle-hi" d={handle.d} stroke={shade(5)} strokeWidth="6" opacity=".45" transform="translate(-6 -8)" />
+        <path data-s="handle-hi" d={handle.d} stroke={shade(5.2)} strokeWidth="4.5" opacity=".45" transform="translate(-3 -5)" />
       </g>
 
-      {/* gold rings + tassel */}
-      {[ringTop, ringTopR].map((p, k) => (
-        <g key={k} transform={`translate(${p[0]} ${p[1] + 17})`}>
-          <g data-s="gold">
-            <circle r="17" fill="none" stroke="#6a4f12" strokeWidth="8.5" transform="translate(1 2)" />
-            <circle r="17" fill="none" stroke="#dcc07a" strokeWidth="6.5" />
-            <path d="M-14 -7 A15.5 15.5 0 0 1 -3 -15" fill="none" stroke="#fff6d2" strokeWidth="2.4" strokeLinecap="round" />
-          </g>
-        </g>
-      ))}
-
-      <g transform={`translate(${ringTopR[0] + 4} ${ringTopR[1] + 40})`}>
-        <g data-s="tassel">
-          <circle r="8.5" cy="4" fill="#8a5a1c" />
-          <circle r="8.5" cy="4" fill="none" stroke="#e0c27c" strokeWidth="2.4" opacity=".8" />
-          {[-15, -10, -5, 0, 5, 10, 15].map((dx, k) => (
-            <path
-              key={dx}
-              d={`M${dx * 0.18} 14 C${dx * 0.5} 44 ${dx * 1.1} 66 ${dx * 1.3} ${100 - Math.abs(dx) * 0.7}`}
-              fill="none"
-              stroke={k % 2 ? "#c9a24b" : "#e0c27c"}
-              strokeWidth="5.4"
-              strokeLinecap="round"
-            />
-          ))}
-          <rect x="-8" y="22" width="16" height="7" rx="3" fill="#7d5f19" />
-        </g>
-      </g>
-
-      {/* the crochet hook that "makes" it */}
+      {/* the crochet hook that "makes" it (only exists mid-story) */}
       <g data-s="hook" data-static-hidden>
         <g transform="rotate(-27)">
           <path d="M18 -4.2 L240 -5.8 L240 5.8 L18 4.2Z" fill="#d9bd78" />

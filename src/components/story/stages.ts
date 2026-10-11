@@ -30,14 +30,14 @@ export const storyStages: StoryStage[] = [
   {
     id: "stitch",
     word: "Stitch",
-    caption: "Row over row, chunky stitches lock together, one loop at a time.",
+    caption: "Row over row, plump stitches stack up, one loop at a time.",
     bg: "#f1cbad",
     ink: "#2a1218",
   },
   {
     id: "handle",
     word: "Handle",
-    caption: "A braided handle is worked on, then gold rings and a tassel to finish.",
+    caption: "A rolled edge and a braided cut-out handle finish the clutch.",
     bg: "#2a2224",
     ink: "#f6ecdd",
   },

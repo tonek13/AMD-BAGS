@@ -19,7 +19,7 @@ npm run lint
 
 1. **Header** – brand, Collection, Our Craft, cart count.
 2. **Opening** – real photographs in an arch/overlap composition, masked headline reveal, price tag that opens the product.
-3. **From a thread to your everyday companion** – the signature scroll story: one reversible GSAP timeline drives an SVG crochet bag from a loose strand → foundation ring → rows of stitches (a crochet hook travels along each row) → braided handle, gold rings and tassel → the finished bag settling beside a real photo and an "Explore the collection" button. Backgrounds, captions and the weight of the headline word change with each stage. Desktop pins for ~4 screens, phones for ~3. A "Skip to the collection" link stays on screen.
+3. **From a thread to your everyday companion** – the signature scroll story: one reversible GSAP timeline drives an SVG crochet bag from a loose strand → foundation ring → rows of staggered stitches (a crochet hook travels along each row) → rolled braided edge and cut-out handle → the finished bag settling beside a real photo and an "Explore the collection" button. Backgrounds, captions and the weight of the headline word change with each stage. Desktop pins for ~4 screens, phones for ~3. A "Skip to the collection" link stays on screen.
 4. **Featured bags** – chosen by `featured` in the product data; each panel recolours the section from that bag's theme.
 5. **Collection** – style and colour filters (animated with GSAP Flip), availability badges, sold-out bags stay viewable.
 6. **Our Craft** – close-up crops of the real photos.

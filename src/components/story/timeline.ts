@@ -1,5 +1,5 @@
 import { gsap } from "@/lib/gsap";
-import { bag, COLS, ROWS } from "./bagGeometry";
+import { bag, ROWS } from "./bagGeometry";
 import { storyStages } from "./stages";
 
 /**
@@ -9,8 +9,8 @@ import { storyStages } from "./stages";
  *
  *   0 ─ 3.3    1  Thread       a loose strand curves across the screen
  * 3.3 ─ 6.5    2  Foundation   the strand winds into a ring (the base)
- * 6.5 ─ 14.5   3  Stitch       rows of interlocking stitches build the body
- *14.5 ─ 18.6   4  Handle       braided handle, gold rings and tassel
+ * 6.5 ─ 14.5   3  Stitch       rows of plump stitches build the clutch, then a rolled edge
+ *14.5 ─ 18.6   4  Handle       the cut-out handle is braided in around its slot
  *18.6 ─ 23.0   5  Companion    the finished bag settles beside a real photograph
  */
 
@@ -18,7 +18,7 @@ const STAGE_START = [0, 3.3, 6.5, 14.5, 18.6] as const;
 const END = 23;
 
 const ROW_START = 6.9;
-const ROW_DUR = 0.78;
+const ROW_DUR = 0.82;
 const ROW_DRAW = ROW_DUR * 0.82; // portion of a row spent travelling along it
 
 const variation = (wght: number, soft: number, wonk: number) =>
@@ -68,11 +68,9 @@ export function buildStoryTimeline(root: HTMLElement, { mobile }: { mobile: bool
   const handlePaths = all<SVGPathElement>('[data-s="handle-path"]');
   const handleHi = one<SVGElement>('[data-s="handle-hi"]');
   const twists = all<SVGGElement>('[data-s="twist"]');
-  const golds = all<SVGGElement>('[data-s="gold"]');
-  const tassel = one<SVGGElement>('[data-s="tassel"]');
   const hook = one<SVGGElement>('[data-s="hook"]');
 
-  const { rows, rim, handle } = bag;
+  const { rows } = bag;
 
   const tl = gsap.timeline({
     defaults: { ease: "none" },
@@ -95,6 +93,8 @@ export function buildStoryTimeline(root: HTMLElement, { mobile }: { mobile: bool
   gsap.set(dots[0], { opacity: 1, scale: 1.5 });
   gsap.set([strandGroup, ringGroup, interior, rimGroup, handleGroup, hook, shadow], { autoAlpha: 0 });
   gsap.set(rowEls, { autoAlpha: 0 });
+  // A zero-length dash with round caps still paints a dot, so each backing stays hidden until it starts drawing.
+  gsap.set(rowEls.map((r) => r.querySelector('[data-s="backing"]')), { autoAlpha: 0 });
   gsap.set(card, { autoAlpha: 0 });
 
   /* ── stage choreography: colours, words, captions, rail ─────────────── */
@@ -138,12 +138,14 @@ export function buildStoryTimeline(root: HTMLElement, { mobile }: { mobile: bool
   /* ── 3 · STITCH: rows build from the base up, the hook travelling along ─ */
   rowEls.forEach((rowEl, r) => {
     const start = ROW_START + r * ROW_DUR;
-    const step = ROW_DRAW / (COLS - 1);
     const backing = rowEl.querySelector<SVGPathElement>('[data-s="backing"]')!;
     const stitchEls = Array.from(rowEl.querySelectorAll<SVGGElement>('[data-s="stitch"]'));
     const leftToRight = rows[r].leftToRight;
+    // Rows alternate between 16 and 15 stitches (staggered), so the pace is set per row.
+    const step = ROW_DRAW / Math.max(1, stitchEls.length - 1);
 
     tl.set(rowEl, { autoAlpha: 1 }, start);
+    tl.set(backing, { autoAlpha: 1 }, start + 0.1);
     tl.fromTo(
       backing,
       { drawSVG: leftToRight ? "0% 0%" : "100% 100%" },
@@ -177,38 +179,42 @@ export function buildStoryTimeline(root: HTMLElement, { mobile }: { mobile: bool
     });
   });
 
-  // The rim closes the form: opening appears, a rolled edge is drawn around it.
+  // The rolled edge closes the form; the hook runs along it as it is drawn.
   const rimStart = ROW_START + ROWS * ROW_DUR - 0.1;
-  tl.fromTo(
-    interior,
-    { autoAlpha: 0, scaleY: 0.4, transformOrigin: "50% 50%" },
-    { autoAlpha: 1, scaleY: 1, duration: 0.8, ease: "power2.out" },
-    rimStart,
-  );
+  const rimMain = rimPaths[1];
+  const rimLen = rimMain.getTotalLength();
   tl.set(rimGroup, { autoAlpha: 1 }, rimStart);
-  tl.fromTo(rimPaths, { drawSVG: "0% 0%" }, { drawSVG: "0% 100%", duration: 1.15, ease: "none" }, rimStart);
-  tl.fromTo(rimTicks, { opacity: 0 }, { opacity: 0.22, duration: 0.4 }, rimStart + 0.8);
+  tl.fromTo(rimPaths, { drawSVG: "0% 0%" }, { drawSVG: "0% 100%", duration: 1.25, ease: "none" }, rimStart);
+  tl.fromTo(rimTicks, { opacity: 0 }, { opacity: 0.24, duration: 0.4 }, rimStart + 0.9);
   const rimHook = { u: 0 };
   tl.fromTo(
     rimHook,
     { u: 0 },
     {
       u: 1,
-      duration: 1.15,
+      duration: 1.25,
       ease: "none",
       onUpdate: () => {
-        const phi = Math.PI - rimHook.u * 2 * Math.PI;
-        gsap.set(hook, { x: rim.cx + rim.rx * Math.cos(phi), y: rim.cy + rim.ry * Math.sin(phi) - 10 });
+        const p = rimMain.getPointAtLength(rimHook.u * rimLen);
+        gsap.set(hook, { x: p.x, y: p.y - 10 });
       },
     },
     rimStart,
   );
 
-  /* ── 4 · HANDLE: drawn along an arch, twists pop in under the hook ───── */
+  /* ── 4 · HANDLE: the slot opens, then a braided band is worked around it ─ */
   const handleStart = STAGE_START[3] + 0.5;
-  const handleDur = 2.3;
-  tl.fromTo(golds[0], { scale: 0, autoAlpha: 0 }, { scale: 1, autoAlpha: 1, duration: 0.6, ease: "back.out(3)" }, handleStart - 0.35);
-  tl.to(hook, { x: handle.p0[0], y: handle.p0[1] - 10, duration: 0.55, ease: "power2.inOut" }, handleStart - 0.6);
+  const handleDur = 2.5;
+  const handleMain = handlePaths[1];
+  const handleLen = handleMain.getTotalLength();
+  const handleOrigin = handleMain.getPointAtLength(0);
+  tl.to(hook, { x: handleOrigin.x, y: handleOrigin.y - 10, duration: 0.6, ease: "power2.inOut" }, handleStart - 0.65);
+  tl.fromTo(
+    interior,
+    { autoAlpha: 0, scaleX: 0.5, transformOrigin: "50% 50%" },
+    { autoAlpha: 1, scaleX: 1, duration: 0.7, ease: "power2.out" },
+    handleStart - 0.2,
+  );
   tl.set(handleGroup, { autoAlpha: 1 }, handleStart);
   tl.fromTo(handlePaths, { drawSVG: "0% 0%" }, { drawSVG: "0% 100%", duration: handleDur, ease: "none" }, handleStart);
   tl.fromTo(handleHi, { opacity: 0 }, { opacity: 0.45, duration: 0.6 }, handleStart + handleDur - 0.3);
@@ -221,8 +227,8 @@ export function buildStoryTimeline(root: HTMLElement, { mobile }: { mobile: bool
       duration: handleDur,
       ease: "none",
       onUpdate: () => {
-        const [x, y] = handle.atArc(handleHook.u);
-        gsap.set(hook, { x, y: y - 10 });
+        const p = handleMain.getPointAtLength(handleHook.u * handleLen);
+        gsap.set(hook, { x: p.x, y: p.y - 10 });
       },
     },
     handleStart,
@@ -232,34 +238,24 @@ export function buildStoryTimeline(root: HTMLElement, { mobile }: { mobile: bool
     tl.fromTo(
       el,
       { scale: 0, autoAlpha: 0 },
-      { scale: 1, autoAlpha: 1, duration: 0.32, ease: "back.out(2.2)" },
+      { scale: 1, autoAlpha: 1, duration: 0.3, ease: "back.out(2.2)" },
       handleStart + u * handleDur * 0.96,
     );
   });
 
   const handleEnd = handleStart + handleDur;
-  tl.fromTo(golds[1], { scale: 0, autoAlpha: 0 }, { scale: 1, autoAlpha: 1, duration: 0.6, ease: "back.out(3)" }, handleEnd - 0.2);
-  tl.fromTo(
-    tassel,
-    { autoAlpha: 0, y: -34, scale: 0.3, rotation: 0, transformOrigin: "50% 0%" },
-    { autoAlpha: 1, y: 0, scale: 1, duration: 1.1, ease: "elastic.out(1, 0.42)" },
-    handleEnd + 0.15,
-  );
-  tl.to(hook, { x: "+=460", y: "-=380", rotation: 18, autoAlpha: 0, duration: 0.9, ease: "power2.in" }, handleEnd + 0.2);
+  tl.to(hook, { x: "+=460", y: "-=380", rotation: 18, autoAlpha: 0, duration: 0.9, ease: "power2.in" }, handleEnd + 0.15);
 
   /* ── 5 · COMPANION: settle, slide aside, meet the real thing ────────── */
   const s5 = STAGE_START[4];
   tl.to(
     art,
     mobile
-      ? { xPercent: -19, scale: 0.62, duration: 1.5, ease: "power3.inOut" }
-      : { xPercent: -17.5, scale: 0.88, duration: 1.5, ease: "power3.inOut" },
+      ? { xPercent: -21, scale: 0.58, duration: 1.5, ease: "power3.inOut" }
+      : { xPercent: -21.5, scale: 0.72, duration: 1.5, ease: "power3.inOut" },
     s5 - 0.3,
   );
   tl.fromTo(svg, { y: -22 }, { y: 0, duration: 1.0, ease: "bounce.out" }, s5 + 0.9);
-  tl.to(tassel, { rotation: 7, duration: 0.25, ease: "sine.out" }, s5 + 0.95);
-  tl.to(tassel, { rotation: -4, duration: 0.4, ease: "sine.inOut" }, s5 + 1.2);
-  tl.to(tassel, { rotation: 0, duration: 0.5, ease: "sine.inOut" }, s5 + 1.6);
 
   tl.fromTo(
     card,
