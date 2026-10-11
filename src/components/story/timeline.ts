@@ -9,7 +9,7 @@ import { storyStages } from "./stages";
  *
  *   0 ─ 3.3    1  Thread       a loose strand curves across the screen
  * 3.3 ─ 6.5    2  Foundation   the strand winds into a ring (the base)
- * 6.5 ─ 14.5   3  Stitch       rows of plump stitches build the clutch, then the handle opening
+ * 6.5 ─ 14.5   3  Stitch       the real clutch is worked in, row by row, then its handle opening
  *14.5 ─ 18.6   4  Handle       the thick braided arch is worked over the top
  *18.6 ─ 23.0   5  Companion    the finished bag settles beside a real photograph
  */
@@ -59,15 +59,11 @@ export function buildStoryTimeline(root: HTMLElement, { mobile }: { mobile: bool
   const strandPaths = all<SVGPathElement>('[data-s="strand-path"]');
   const ringGroup = one<SVGElement>('[data-s="ring"]');
   const ringPaths = all<SVGPathElement>('[data-s="ring-path"]');
-  const interior = one<SVGElement>('[data-s="interior"]');
   const rowEls = all<SVGGElement>('[data-s="row"]');
-  const rimGroup = one<SVGElement>('[data-s="rim"]');
-  const edge = one<SVGElement>('[data-s="edge"]');
-  const rimPaths = all<SVGPathElement>('[data-s="rim-path"]');
-  const handleGroup = one<SVGElement>('[data-s="handle"]');
-  const handlePaths = all<SVGPathElement>('[data-s="handle-path"]');
-  const handleHi = one<SVGElement>('[data-s="handle-hi"]');
-  const twists = all<SVGGElement>('[data-s="twist"]');
+  const closer = one<SVGElement>('[data-s="closer"]');
+  const slotReveal = one<SVGPathElement>('[data-s="slot-reveal"]');
+  const slotGuide = one<SVGPathElement>('[data-s="slot-guide"]');
+  const archReveal = one<SVGPathElement>('[data-s="arch-reveal"]');
   const hook = one<SVGGElement>('[data-s="hook"]');
 
   const { rows } = bag;
@@ -91,10 +87,8 @@ export function buildStoryTimeline(root: HTMLElement, { mobile }: { mobile: bool
   gsap.set(words.slice(1), { yPercent: 105 });
   gsap.set(dots, { opacity: 0.35, scale: 1 });
   gsap.set(dots[0], { opacity: 1, scale: 1.5 });
-  gsap.set([strandGroup, ringGroup, interior, rimGroup, handleGroup, hook, shadow, edge], { autoAlpha: 0 });
-  gsap.set(rowEls, { autoAlpha: 0 });
-  // A zero-length dash with round caps still paints a dot, so each backing stays hidden until it starts drawing.
-  gsap.set(rowEls.map((r) => r.querySelector('[data-s="backing"]')), { autoAlpha: 0 });
+  // The photo is revealed through masks: with no mask content showing, none of the bag is visible.
+  gsap.set([strandGroup, ringGroup, closer, slotReveal, hook, shadow], { autoAlpha: 0 });
   gsap.set(card, { autoAlpha: 0 });
 
   /* ── stage choreography: colours, words, captions, rail ─────────────── */
@@ -135,61 +129,48 @@ export function buildStoryTimeline(root: HTMLElement, { mobile }: { mobile: bool
   tl.set(strandGroup, { autoAlpha: 0 }, STAGE_START[1] + 3.0);
   tl.fromTo(shadow, { autoAlpha: 0, scaleX: 0.45 }, { autoAlpha: 1, scaleX: 1, duration: 1.4, ease: "power2.out" }, 5.2);
 
-  /* ── 3 · STITCH: rows build from the base up, the hook travelling along ─ */
+  /* ── 3 · STITCH: the photo is worked in row by row, the hook travelling along ─ */
   rowEls.forEach((rowEl, r) => {
     const start = ROW_START + r * ROW_DUR;
-    const backing = rowEl.querySelector<SVGPathElement>('[data-s="backing"]')!;
-    const stitchEls = Array.from(rowEl.querySelectorAll<SVGGElement>('[data-s="stitch"]'));
-    const leftToRight = rows[r].leftToRight;
-    // Rows alternate between 16 and 15 stitches (staggered), so the pace is set per row.
+    const stitchEls = Array.from(rowEl.querySelectorAll<SVGCircleElement>('[data-s="stitch"]'));
+    // Rows differ in length, so the pace is set per row.
     const step = ROW_DRAW / Math.max(1, stitchEls.length - 1);
-
-    tl.set(rowEl, { autoAlpha: 1 }, start);
-    tl.set(backing, { autoAlpha: 1 }, start + 0.1);
-    tl.fromTo(
-      backing,
-      { drawSVG: leftToRight ? "0% 0%" : "100% 100%" },
-      { drawSVG: "0% 100%", duration: ROW_DRAW, ease: "none" },
-      start + 0.1,
-    );
 
     stitchEls.forEach((el, k) => {
       const at = start + k * step;
-      tl.fromTo(
-        el,
-        { scale: 0, rotation: -28, autoAlpha: 0 },
-        { scale: 1, rotation: 0, autoAlpha: 1, duration: 0.36, ease: "back.out(2.4)" },
-        at,
-      );
+      tl.fromTo(el, { scale: 0 }, { scale: 1, duration: 0.34, ease: "back.out(1.8)" }, at);
 
       // The hook hops from stitch to stitch just ahead of each one forming.
-      const s = rows[r].stitches[k];
+      const b = rows[r].blobs[k];
       if (r === 0 && k === 0) {
         tl.fromTo(
           hook,
-          { autoAlpha: 0, x: s.x + 420, y: s.y - 340 },
-          { autoAlpha: 1, x: s.x, y: s.y - 10, duration: 0.85, ease: "power3.out" },
+          { autoAlpha: 0, x: b.x + 420, y: b.y - 340 },
+          { autoAlpha: 1, x: b.x, y: b.y - 10, duration: 0.85, ease: "power3.out" },
           start - 0.85,
         );
       } else if (k === 0) {
-        tl.to(hook, { x: s.x, y: s.y - 10, duration: 0.12, ease: "power1.out" }, start - 0.12);
+        tl.to(hook, { x: b.x, y: b.y - 10, duration: 0.12, ease: "power1.out" }, start - 0.12);
       } else {
-        tl.to(hook, { x: s.x, y: s.y - 10, duration: step, ease: "none" }, at - step);
+        tl.to(hook, { x: b.x, y: b.y - 10, duration: step, ease: "none" }, at - step);
       }
     });
   });
 
-  // The handle opening appears and its rolled lip is drawn; the hook runs around it.
-  const rimStart = ROW_START + ROW_COUNT * ROW_DUR - 0.1;
-  const rimMain = rimPaths[1];
-  const rimLen = rimMain.getTotalLength();
-  tl.fromTo(edge, { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.9, ease: "power1.out" }, rimStart - 0.3);
-  tl.set(rimGroup, { autoAlpha: 1 }, rimStart);
-  tl.fromTo(rimPaths, { drawSVG: "0% 0%" }, { drawSVG: "0% 100%", duration: 1.25, ease: "none" }, rimStart);
+  // Once the first rows cover the base the foundation rope has done its job.
+  tl.to(ringGroup, { autoAlpha: 0, duration: 0.5, ease: "none" }, ROW_START + ROW_DUR * 2.5);
+
+  // The last stitches knit together into one solid fabric.
+  const rowsEnd = ROW_START + ROW_COUNT * ROW_DUR;
+  tl.fromTo(closer, { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.5, ease: "none" }, rowsEnd);
+
+  // The handle opening is cut: it widens open and the hook runs around its lip.
+  const rimStart = rowsEnd - 0.1;
+  const rimLen = slotGuide.getTotalLength();
   tl.fromTo(
-    interior,
-    { autoAlpha: 0, scaleX: 0.5, transformOrigin: "50% 50%" },
-    { autoAlpha: 1, scaleX: 1, duration: 0.7, ease: "power2.out" },
+    slotReveal,
+    { autoAlpha: 0, scaleX: 0.4, transformOrigin: "50% 50%" },
+    { autoAlpha: 1, scaleX: 1, duration: 1.1, ease: "power2.out" },
     rimStart,
   );
   const rimHook = { u: 0 };
@@ -201,7 +182,7 @@ export function buildStoryTimeline(root: HTMLElement, { mobile }: { mobile: bool
       duration: 1.25,
       ease: "none",
       onUpdate: () => {
-        const p = rimMain.getPointAtLength(rimHook.u * rimLen);
+        const p = slotGuide.getPointAtLength(rimHook.u * rimLen);
         gsap.set(hook, { x: p.x, y: p.y - 10 });
       },
     },
@@ -211,13 +192,10 @@ export function buildStoryTimeline(root: HTMLElement, { mobile }: { mobile: bool
   /* ── 4 · HANDLE: the thick braided arch is worked over the top ──────────── */
   const handleStart = STAGE_START[3] + 0.5;
   const handleDur = 2.5;
-  const handleMain = handlePaths[1];
-  const handleLen = handleMain.getTotalLength();
-  const handleOrigin = handleMain.getPointAtLength(0);
+  const handleLen = archReveal.getTotalLength();
+  const handleOrigin = archReveal.getPointAtLength(0);
   tl.to(hook, { x: handleOrigin.x, y: handleOrigin.y - 10, duration: 0.6, ease: "power2.inOut" }, handleStart - 0.65);
-  tl.set(handleGroup, { autoAlpha: 1 }, handleStart);
-  tl.fromTo(handlePaths, { drawSVG: "0% 0%" }, { drawSVG: "0% 100%", duration: handleDur, ease: "none" }, handleStart);
-  tl.fromTo(handleHi, { opacity: 0 }, { opacity: 0.45, duration: 0.6 }, handleStart + handleDur - 0.3);
+  tl.fromTo(archReveal, { drawSVG: "0% 0%" }, { drawSVG: "0% 100%", duration: handleDur, ease: "none" }, handleStart);
   const handleHook = { u: 0 };
   tl.fromTo(
     handleHook,
@@ -227,21 +205,12 @@ export function buildStoryTimeline(root: HTMLElement, { mobile }: { mobile: bool
       duration: handleDur,
       ease: "none",
       onUpdate: () => {
-        const p = handleMain.getPointAtLength(handleHook.u * handleLen);
+        const p = archReveal.getPointAtLength(handleHook.u * handleLen);
         gsap.set(hook, { x: p.x, y: p.y - 10 });
       },
     },
     handleStart,
   );
-  twists.forEach((el, k) => {
-    const u = bag.handle.segments[k].u;
-    tl.fromTo(
-      el,
-      { scale: 0, autoAlpha: 0 },
-      { scale: 1, autoAlpha: 1, duration: 0.3, ease: "back.out(2.2)" },
-      handleStart + u * handleDur * 0.96,
-    );
-  });
 
   const handleEnd = handleStart + handleDur;
   tl.to(hook, { x: "+=460", y: "-=380", rotation: 18, autoAlpha: 0, duration: 0.9, ease: "power2.in" }, handleEnd + 0.15);
