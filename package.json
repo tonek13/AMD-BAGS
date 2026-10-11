@@ -6,7 +6,10 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test:cms": "node scripts/testing/cms-tests.mjs",
+    "check:env": "node scripts/check-env.mjs",
+    "import:products": "node --env-file=.env.local scripts/import-products.mjs"
   },
   "dependencies": {
     "@sanity/color-input": "^6.1.6",

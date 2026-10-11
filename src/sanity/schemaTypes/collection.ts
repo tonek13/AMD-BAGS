@@ -1,4 +1,4 @@
-import { TagIcon } from "@sanity/icons";
+import { TagIcon } from "@sanity/icons/Tag";
 import { defineField, defineType } from "sanity";
 
 /** A group of bags (e.g. "Clutches"). Shown as a filter on the collection section of the website. */

@@ -1,4 +1,4 @@
-import { CogIcon } from "@sanity/icons";
+import { CogIcon } from "@sanity/icons/Cog";
 import { defineArrayMember, defineField, defineType } from "sanity";
 
 /** Document id of the one and only Shop Settings document. */

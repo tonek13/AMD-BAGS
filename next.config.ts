@@ -22,6 +22,8 @@ function sanityImagePatterns(): NonNullable<NonNullable<NextConfig["images"]>["r
 const usingTestImageHost = Boolean(process.env.SANITY_CDN_BASE_URL?.trim());
 
 const nextConfig: NextConfig = {
+  // Test runs build into their own folder (NEXT_DIST_DIR) so they never touch a developer's .next.
+  distDir: process.env.NEXT_DIST_DIR?.trim() || ".next",
   cacheComponents: true,
   partialPrefetching: true,
   // A stray package-lock.json exists in the parent user folder; pin the root to this project.

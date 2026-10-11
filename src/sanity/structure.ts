@@ -1,4 +1,8 @@
-import { CogIcon, EyeClosedIcon, PackageIcon, StarIcon, TagIcon } from "@sanity/icons";
+import { CogIcon } from "@sanity/icons/Cog";
+import { EyeClosedIcon } from "@sanity/icons/EyeClosed";
+import { PackageIcon } from "@sanity/icons/Package";
+import { StarIcon } from "@sanity/icons/Star";
+import { TagIcon } from "@sanity/icons/Tag";
 import type { StructureResolver } from "sanity/structure";
 import { SHOP_SETTINGS_ID } from "./schemaTypes/shopSettings";
 
