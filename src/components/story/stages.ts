@@ -37,7 +37,7 @@ export const storyStages: StoryStage[] = [
   {
     id: "handle",
     word: "Handle",
-    caption: "A rolled edge and a braided cut-out handle finish the clutch.",
+    caption: "A thick braided arch is worked over the top to make the handle.",
     bg: "#2a2224",
     ink: "#f6ecdd",
   },

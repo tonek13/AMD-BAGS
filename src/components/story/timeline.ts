@@ -1,5 +1,5 @@
 import { gsap } from "@/lib/gsap";
-import { bag, ROWS } from "./bagGeometry";
+import { bag, ROW_COUNT } from "./bagGeometry";
 import { storyStages } from "./stages";
 
 /**
@@ -9,8 +9,8 @@ import { storyStages } from "./stages";
  *
  *   0 ─ 3.3    1  Thread       a loose strand curves across the screen
  * 3.3 ─ 6.5    2  Foundation   the strand winds into a ring (the base)
- * 6.5 ─ 14.5   3  Stitch       rows of plump stitches build the clutch, then a rolled edge
- *14.5 ─ 18.6   4  Handle       the cut-out handle is braided in around its slot
+ * 6.5 ─ 14.5   3  Stitch       rows of plump stitches build the clutch, then the handle opening
+ *14.5 ─ 18.6   4  Handle       the thick braided arch is worked over the top
  *18.6 ─ 23.0   5  Companion    the finished bag settles beside a real photograph
  */
 
@@ -18,7 +18,7 @@ const STAGE_START = [0, 3.3, 6.5, 14.5, 18.6] as const;
 const END = 23;
 
 const ROW_START = 6.9;
-const ROW_DUR = 0.82;
+const ROW_DUR = 6.3 / ROW_COUNT; // the rows fill the stretch from 6.9 to ~13.2
 const ROW_DRAW = ROW_DUR * 0.82; // portion of a row spent travelling along it
 
 const variation = (wght: number, soft: number, wonk: number) =>
@@ -62,8 +62,8 @@ export function buildStoryTimeline(root: HTMLElement, { mobile }: { mobile: bool
   const interior = one<SVGElement>('[data-s="interior"]');
   const rowEls = all<SVGGElement>('[data-s="row"]');
   const rimGroup = one<SVGElement>('[data-s="rim"]');
+  const edge = one<SVGElement>('[data-s="edge"]');
   const rimPaths = all<SVGPathElement>('[data-s="rim-path"]');
-  const rimTicks = one<SVGElement>('[data-s="rim-ticks"]');
   const handleGroup = one<SVGElement>('[data-s="handle"]');
   const handlePaths = all<SVGPathElement>('[data-s="handle-path"]');
   const handleHi = one<SVGElement>('[data-s="handle-hi"]');
@@ -91,7 +91,7 @@ export function buildStoryTimeline(root: HTMLElement, { mobile }: { mobile: bool
   gsap.set(words.slice(1), { yPercent: 105 });
   gsap.set(dots, { opacity: 0.35, scale: 1 });
   gsap.set(dots[0], { opacity: 1, scale: 1.5 });
-  gsap.set([strandGroup, ringGroup, interior, rimGroup, handleGroup, hook, shadow], { autoAlpha: 0 });
+  gsap.set([strandGroup, ringGroup, interior, rimGroup, handleGroup, hook, shadow, edge], { autoAlpha: 0 });
   gsap.set(rowEls, { autoAlpha: 0 });
   // A zero-length dash with round caps still paints a dot, so each backing stays hidden until it starts drawing.
   gsap.set(rowEls.map((r) => r.querySelector('[data-s="backing"]')), { autoAlpha: 0 });
@@ -179,13 +179,19 @@ export function buildStoryTimeline(root: HTMLElement, { mobile }: { mobile: bool
     });
   });
 
-  // The rolled edge closes the form; the hook runs along it as it is drawn.
-  const rimStart = ROW_START + ROWS * ROW_DUR - 0.1;
+  // The handle opening appears and its rolled lip is drawn; the hook runs around it.
+  const rimStart = ROW_START + ROW_COUNT * ROW_DUR - 0.1;
   const rimMain = rimPaths[1];
   const rimLen = rimMain.getTotalLength();
+  tl.fromTo(edge, { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.9, ease: "power1.out" }, rimStart - 0.3);
   tl.set(rimGroup, { autoAlpha: 1 }, rimStart);
   tl.fromTo(rimPaths, { drawSVG: "0% 0%" }, { drawSVG: "0% 100%", duration: 1.25, ease: "none" }, rimStart);
-  tl.fromTo(rimTicks, { opacity: 0 }, { opacity: 0.24, duration: 0.4 }, rimStart + 0.9);
+  tl.fromTo(
+    interior,
+    { autoAlpha: 0, scaleX: 0.5, transformOrigin: "50% 50%" },
+    { autoAlpha: 1, scaleX: 1, duration: 0.7, ease: "power2.out" },
+    rimStart,
+  );
   const rimHook = { u: 0 };
   tl.fromTo(
     rimHook,
@@ -202,19 +208,13 @@ export function buildStoryTimeline(root: HTMLElement, { mobile }: { mobile: bool
     rimStart,
   );
 
-  /* ── 4 · HANDLE: the slot opens, then a braided band is worked around it ─ */
+  /* ── 4 · HANDLE: the thick braided arch is worked over the top ──────────── */
   const handleStart = STAGE_START[3] + 0.5;
   const handleDur = 2.5;
   const handleMain = handlePaths[1];
   const handleLen = handleMain.getTotalLength();
   const handleOrigin = handleMain.getPointAtLength(0);
   tl.to(hook, { x: handleOrigin.x, y: handleOrigin.y - 10, duration: 0.6, ease: "power2.inOut" }, handleStart - 0.65);
-  tl.fromTo(
-    interior,
-    { autoAlpha: 0, scaleX: 0.5, transformOrigin: "50% 50%" },
-    { autoAlpha: 1, scaleX: 1, duration: 0.7, ease: "power2.out" },
-    handleStart - 0.2,
-  );
   tl.set(handleGroup, { autoAlpha: 1 }, handleStart);
   tl.fromTo(handlePaths, { drawSVG: "0% 0%" }, { drawSVG: "0% 100%", duration: handleDur, ease: "none" }, handleStart);
   tl.fromTo(handleHi, { opacity: 0 }, { opacity: 0.45, duration: 0.6 }, handleStart + handleDur - 0.3);
