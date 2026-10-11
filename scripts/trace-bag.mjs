@@ -1,19 +1,23 @@
-// Traces the real Bordeaux Clutch photo into vector data for the scroll-story illustration.
+// Cuts the real Bordeaux Clutch out of its photo for the scroll-story illustration.
 //
 //   node scripts/trace-bag.mjs            → writes src/components/story/bagTrace.generated.ts
-//   node scripts/trace-bag.mjs --debug    → also writes scripts/.trace-debug.png (outline/slot/ridge over the photo)
+//                                           + public/images/story/bag-body.webp and bag-arch.webp
+//   node scripts/trace-bag.mjs --debug    → also writes scripts/.trace-debug.png (layers on ivory)
 //
 // What it extracts from public/images/products/burgundy-clutch-stone-wall.jpg:
 //   • the exact silhouette (wine-red pixels, gaps closed, traced radially from the centre)
-//   • a coarse colour field, so each drawn stitch can take the photo's real light and shade
+//   • a soft-edged cutout of the bag, split in two layers: the BODY, and the braided ARCH plus the
+//     handle opening. The layers overlap, so stacked they are the untouched photograph; the story
+//     builds the body row by row, then works the arch and the opening in.
 // The handle opening and the braided top ridge are fixed polylines read off the photo
 // (coordinates are in the 2× enlarged crop used while tracing: crop = photo[140..840, 300..770] × 2).
 // Everything is mapped into the 1000 × 1000 viewBox used by the illustration.
 import sharp from "sharp";
-import { writeFileSync } from "node:fs";
+import { mkdirSync, writeFileSync } from "node:fs";
 
 const SRC = "public/images/products/burgundy-clutch-stone-wall.jpg";
 const OUT = "src/components/story/bagTrace.generated.ts";
+const IMG_DIR = "public/images/story";
 const DEBUG = process.argv.includes("--debug");
 
 const { data, info } = await sharp(SRC).removeAlpha().raw().toBuffer({ resolveWithObject: true });
@@ -22,14 +26,17 @@ const H = info.height;
 
 // ── 1. wine-red mask ───────────────────────────────────────────────────────
 // Stone is tan (g ≈ 0.65 r), denim is blue (b > r); wine-red has very low g and moderate b.
+const isWine = (i) => {
+  const r = data[i * 3];
+  const g = data[i * 3 + 1];
+  const b = data[i * 3 + 2];
+  return r > 18 && g < 0.5 * r && b < 0.78 * r && r > b;
+};
 let mask = new Uint8Array(W * H);
 for (let y = 280; y < 800; y++) {
   for (let x = 100; x < 900; x++) {
     const i = y * W + x;
-    const r = data[i * 3];
-    const g = data[i * 3 + 1];
-    const b = data[i * 3 + 2];
-    mask[i] = r > 18 && g < 0.5 * r && b < 0.78 * r && r > b ? 1 : 0;
+    mask[i] = isWine(i) ? 1 : 0;
   }
 }
 
@@ -45,7 +52,7 @@ function boxFilter(src, radius, mode) {
       let v = init;
       for (let k = -radius; k <= radius; k++) {
         const xx = x + k;
-        v = pick(v, xx < 0 || xx >= W ? (mode === "max" ? 0 : 0) : src[y * W + xx]);
+        v = pick(v, xx < 0 || xx >= W ? 0 : src[y * W + xx]);
       }
       tmp[y * W + x] = v;
     }
@@ -171,65 +178,173 @@ const ridgeCrop = [
 const slot = slotCrop.map(fromCrop);
 const ridge = ridgeCrop.map(fromCrop);
 
-// ── 5. colour field from the photo ─────────────────────────────────────────
-const fieldCols = 56;
-const fieldRows = 36;
-const fx0 = minX;
-const fy0 = minY;
-const fcw = (maxX - minX + 1) / fieldCols;
-const fch = (maxY - minY + 1) / fieldRows;
-const sums = Array.from({ length: fieldCols * fieldRows }, () => [0, 0, 0, 0]);
-for (let y = minY; y <= maxY; y++) {
-  for (let x = minX; x <= maxX; x++) {
-    const i = y * W + x;
-    if (!bag[i]) continue; // only genuine yarn pixels (no stone showing through)
-    const ci = Math.min(fieldCols - 1, Math.floor((x - fx0) / fcw));
-    const ri = Math.min(fieldRows - 1, Math.floor((y - fy0) / fch));
-    const s = sums[ri * fieldCols + ci];
-    s[0] += data[i * 3];
-    s[1] += data[i * 3 + 1];
-    s[2] += data[i * 3 + 2];
-    s[3]++;
-  }
-}
-const rgb = sums.map((s) => (s[3] > 6 ? [s[0] / s[3], s[1] / s[3], s[2] / s[3]] : null));
-// fill empty cells from their neighbours (a few passes)
-for (let pass = 0; pass < 8; pass++) {
-  rgb.forEach((c, i) => {
-    if (c) return;
-    const x = i % fieldCols;
-    const y = (i / fieldCols) | 0;
-    const near = [];
-    for (const [ox, oy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
-      const nx = x + ox;
-      const ny = y + oy;
-      if (nx >= 0 && ny >= 0 && nx < fieldCols && ny < fieldRows && rgb[ny * fieldCols + nx]) near.push(rgb[ny * fieldCols + nx]);
-    }
-    if (near.length) rgb[i] = [0, 1, 2].map((k) => near.reduce((a, c2) => a + c2[k], 0) / near.length);
-  });
-}
-const hex = (c) => (c ? "#" + c.map((v) => Math.round(v).toString(16).padStart(2, "0")).join("") : "#5a1428");
-
-// ── 6. map into the 1000 × 1000 viewBox ────────────────────────────────────
+// ── 5. map into the 1000 × 1000 viewBox ────────────────────────────────────
 const K = 880 / (maxX - minX);
 const TX = 500 - K * ((minX + maxX) / 2);
 const TY = 540 - K * ((minY + maxY) / 2);
-const mapPt = ([x, y]) => [Math.round((TX + K * x) * 10) / 10, Math.round((TY + K * y) * 10) / 10];
+const r1 = (v) => Math.round(v * 10) / 10;
+const mapPt = ([x, y]) => [r1(TX + K * x), r1(TY + K * y)];
 
 function catmull(points, closed) {
   const n = points.length;
   const get = (i) => (closed ? points[(i + n) % n] : points[Math.max(0, Math.min(n - 1, i))]);
-  let d = `M${points[0][0]} ${points[0][1]}`;
+  let d = `M${r1(points[0][0])} ${r1(points[0][1])}`;
   const segs = closed ? n : n - 1;
   for (let i = 0; i < segs; i++) {
     const p0 = get(i - 1), p1 = get(i), p2 = get(i + 1), p3 = get(i + 2);
     const c1 = [p1[0] + (p2[0] - p0[0]) / 6, p1[1] + (p2[1] - p0[1]) / 6];
     const c2 = [p2[0] - (p3[0] - p1[0]) / 6, p2[1] - (p3[1] - p1[1]) / 6];
-    d += ` C${c1.map((v) => Math.round(v * 10) / 10).join(" ")} ${c2.map((v) => Math.round(v * 10) / 10).join(" ")} ${p2[0]} ${p2[1]}`;
+    d += ` C${c1.map(r1).join(" ")} ${c2.map(r1).join(" ")} ${r1(p2[0])} ${r1(p2[1])}`;
   }
   return closed ? d + "Z" : d;
 }
 
+// ── 6. the cutout ──────────────────────────────────────────────────────────
+// 6a. alpha at photo resolution. The silhouette is closed over the gaps between stitches, so along
+// its rim the stone behind those gaps is inside it: strip every stone-coloured pixel within a few
+// pixels of the edge. Anything deeper (the handle opening, the holes in the braid) stays untouched.
+const dist = new Uint8Array(W * H).fill(255);
+let frontier = [];
+for (let i = 0; i < W * H; i++) {
+  if (!solid[i]) {
+    dist[i] = 0;
+    frontier.push(i);
+  }
+}
+for (let d = 1; d <= 12 && frontier.length; d++) {
+  const nextFrontier = [];
+  for (const p of frontier) {
+    const x = p % W;
+    for (const n of [x > 0 ? p - 1 : -1, x < W - 1 ? p + 1 : -1, p - W, p + W]) {
+      if (n >= 0 && n < W * H && dist[n] === 255) {
+        dist[n] = d;
+        nextFrontier.push(n);
+      }
+    }
+  }
+  frontier = nextFrontier;
+}
+const FRINGE = 11;
+let alpha = new Uint8Array(W * H);
+for (let i = 0; i < W * H; i++) {
+  if (!solid[i]) continue;
+  const rim = dist[i] <= FRINGE;
+  alpha[i] = !rim || isWine(i) || data[i * 3] <= 70 ? 1 : 0;
+}
+alpha = boxFilter(boxFilter(alpha, 1, "min"), 1, "max"); // drop single-pixel specks
+
+// 6b. crop, soften the edge, upscale
+const PAD = 10;
+const CL = Math.max(0, minX - PAD);
+const CT = Math.max(0, minY - PAD);
+const CW = Math.min(W, maxX + PAD + 1) - CL;
+const CH = Math.min(H, maxY + PAD + 1) - CT;
+const S = 1.5; // output scale
+const OW = Math.round(CW * S);
+const OH = Math.round(CH * S);
+
+const alphaCrop = Buffer.alloc(CW * CH);
+for (let y = 0; y < CH; y++) for (let x = 0; x < CW; x++) alphaCrop[y * CW + x] = alpha[(CT + y) * W + CL + x] * 255;
+const softRaw = await sharp(alphaCrop, { raw: { width: CW, height: CH, channels: 1 } })
+  .blur(1.1)
+  .resize(OW, OH, { kernel: "cubic" })
+  .extractChannel(0)
+  .raw()
+  .toBuffer();
+if (softRaw.length !== OW * OH) throw new Error("unexpected alpha buffer");
+const edge = Buffer.alloc(OW * OH);
+for (let i = 0; i < edge.length; i++) {
+  const v = softRaw[i] / 255;
+  edge[i] = Math.round(Math.min(1, Math.max(0, (v - 0.56) * 3 + 0.5)) * 255);
+}
+
+const rgbOut = await sharp(SRC)
+  .extract({ left: CL, top: CT, width: CW, height: CH })
+  .resize(OW, OH, { kernel: "lanczos3" })
+  .removeAlpha()
+  .raw()
+  .toBuffer();
+
+// 6c. the two layers. The arch layer is the braided arch plus the handle opening; the body layer is
+// everything else. They overlap by a few pixels so stacked they show no seam.
+const toOut = ([x, y]) => [(x - CL) * S, (y - CT) * S];
+const ridgeOut = ridge.map(toOut);
+const slotOut = slot.map(toOut);
+// the arch is thicker down its right-hand side than at the top, so its width varies along the ridge
+const archHalf = (t) => (37 + 19 * smoothstep((t - 0.45) / 0.45)) * S; // half thickness, output pixels
+function smoothstep(x) {
+  const c = Math.min(1, Math.max(0, x));
+  return c * c * (3 - 2 * c);
+}
+/** Points along the Catmull-Rom ridge, with how far along it (0..1) each one is. */
+function sampleRidge(points, perSegment = 12) {
+  const out = [];
+  for (let i = 0; i < points.length - 1; i++) {
+    const p0 = points[Math.max(0, i - 1)], p1 = points[i], p2 = points[i + 1], p3 = points[Math.min(points.length - 1, i + 2)];
+    const c1 = [p1[0] + (p2[0] - p0[0]) / 6, p1[1] + (p2[1] - p0[1]) / 6];
+    const c2 = [p2[0] - (p3[0] - p1[0]) / 6, p2[1] - (p3[1] - p1[1]) / 6];
+    for (let k = 0; k < perSegment; k++) {
+      const t = k / perSegment, m = 1 - t;
+      out.push([
+        m * m * m * p1[0] + 3 * m * m * t * c1[0] + 3 * m * t * t * c2[0] + t * t * t * p2[0],
+        m * m * m * p1[1] + 3 * m * m * t * c1[1] + 3 * m * t * t * c2[1] + t * t * t * p2[1],
+      ]);
+    }
+  }
+  out.push(points[points.length - 1]);
+  return out.map((p, i) => ({ x: p[0], y: p[1], t: i / (out.length - 1) }));
+}
+const ridgeSamples = sampleRidge(ridgeOut);
+// the band is a run of overlapping discs centred on the ridge: the body's cut-out is a little
+// smaller than the arch layer's, so the two layers overlap all the way round
+// …plus a few discs over the outer top edge, which the centre line runs too far inside of
+const EXTRA = [[760, 72, 64], [838, 112, 60], [884, 156, 44], [340, 30, 34], [470, 36, 30], [680, 44, 34]];
+const discs = (grow) =>
+  ridgeSamples.map((p) => `<circle cx="${r1(p.x)}" cy="${r1(p.y)}" r="${r1(archHalf(p.t) + grow * S)}"/>`).join("") +
+  EXTRA.map(([x, y, rad]) => `<circle cx="${x}" cy="${y}" r="${rad + grow * S}"/>`).join("");
+const regionSvg = (body) => `<svg xmlns="http://www.w3.org/2000/svg" width="${OW}" height="${OH}" viewBox="0 0 ${OW} ${OH}">
+  <rect width="${OW}" height="${OH}" fill="${body ? "white" : "black"}"/>
+  <g fill="${body ? "black" : "white"}">${discs(body ? -3 : 4)}</g>
+  <path d="${catmull(slotOut, true)}" fill="${body ? "black" : "white"}" ${body ? "" : `stroke="white" stroke-width="${12 * S}" stroke-linejoin="round"`}/>
+</svg>`;
+const region = async (body) => {
+  const { data: d, info: ri } = await sharp(Buffer.from(regionSvg(body))).removeAlpha().greyscale().raw().toBuffer({ resolveWithObject: true });
+  if (ri.channels !== 1 || d.length !== OW * OH) throw new Error("unexpected region buffer");
+  return d;
+};
+const bodyRegion = await region(true);
+const archRegion = await region(false);
+
+mkdirSync(IMG_DIR, { recursive: true });
+async function writeLayer(name, regionBuf) {
+  const a = Buffer.alloc(OW * OH);
+  for (let i = 0; i < a.length; i++) a[i] = Math.round((edge[i] * regionBuf[i]) / 255);
+  const file = `${IMG_DIR}/${name}.webp`;
+  await sharp(rgbOut, { raw: { width: OW, height: OH, channels: 3 } })
+    .joinChannel(a, { raw: { width: OW, height: OH, channels: 1 } })
+    .webp({ quality: 90, alphaQuality: 100, effort: 6 })
+    .toFile(file);
+  return file;
+}
+const bodyFile = await writeLayer("bag-body", bodyRegion);
+const archFile = await writeLayer("bag-arch", archRegion);
+
+// How far from the ridge does the arch layer reach? The story reveals it with a stroke along the
+// ridge, so that stroke must be at least twice as wide as this.
+let reach = 0;
+const rs = ridgeSamples;
+for (let y = 0; y < OH; y += 2) {
+  for (let x = 0; x < OW; x += 2) {
+    const i = y * OW + x;
+    if ((edge[i] * archRegion[i]) / 255 < 8) continue;
+    let m = Infinity;
+    for (const p of rs) m = Math.min(m, (p.x - x) ** 2 + (p.y - y) ** 2);
+    reach = Math.max(reach, Math.sqrt(m));
+  }
+}
+const archReach = r1((reach / S) * K); // viewBox units
+
+// ── 7. write the trace ─────────────────────────────────────────────────────
 const outlineVb = smooth.map(mapPt);
 const slotVb = slot.map(mapPt);
 const ridgeVb = ridge.map(mapPt);
@@ -242,21 +357,13 @@ const trace = {
   ridgePoints: ridgeVb,
   ridge: catmull(ridgeVb, false),
   scale: Math.round(K * 1000) / 1000,
-  field: {
-    cols: fieldCols,
-    rows: fieldRows,
-    // field cell geometry, in viewBox units
-    x0: Math.round((TX + K * fx0) * 10) / 10,
-    y0: Math.round((TY + K * fy0) * 10) / 10,
-    cw: Math.round(K * fcw * 100) / 100,
-    ch: Math.round(K * fch * 100) / 100,
-    colors: rgb.map(hex),
-  },
+  image: { x: r1(TX + K * CL), y: r1(TY + K * CT), w: r1(K * CW), h: r1(K * CH) },
+  archReach,
 };
 
 const ts = `/* prettier-ignore */
 // GENERATED by scripts/trace-bag.mjs from public/images/products/burgundy-clutch-stone-wall.jpg – do not edit.
-// Silhouette, handle opening, top arch and a colour field, all in the illustration's 1000 × 1000 viewBox.
+// Silhouette, handle opening, top arch and the placement of the cutout, in the illustration's 1000 × 1000 viewBox.
 export interface BagTrace {
   outlinePoints: [number, number][];
   outline: string;
@@ -265,21 +372,39 @@ export interface BagTrace {
   ridgePoints: [number, number][];
   ridge: string;
   scale: number;
-  field: { cols: number; rows: number; x0: number; y0: number; cw: number; ch: number; colors: string[] };
+  /** Where bag-body.webp and bag-arch.webp sit in the viewBox. */
+  image: { x: number; y: number; w: number; h: number };
+  /** Farthest distance from the ridge to any pixel of the arch layer, in viewBox units. */
+  archReach: number;
 }
 
 export const bagTrace: BagTrace = ${JSON.stringify(trace)};
 `;
 writeFileSync(OUT, ts);
 console.log("wrote", OUT, `(${(ts.length / 1024).toFixed(1)} KB)`, "bbox", minX, minY, maxX, maxY, "scale", trace.scale);
+console.log("wrote", bodyFile, archFile);
 
 if (DEBUG) {
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}">
-    <path d="${catmull(smooth.map((p) => p.map((v) => Math.round(v * 10) / 10)), true)}" fill="none" stroke="#00ff66" stroke-width="3"/>
-    <path d="${catmull(slot.map((p) => p.map((v) => Math.round(v * 10) / 10)), true)}" fill="rgba(255,255,0,.25)" stroke="#ffee00" stroke-width="2.5"/>
-    <path d="${catmull(ridge.map((p) => p.map((v) => Math.round(v * 10) / 10)), false)}" fill="none" stroke="#00d0ff" stroke-width="3"/>
+  const ivory = { r: 239, g: 230, b: 212, alpha: 1 };
+  const layer = (file) => sharp(file).toBuffer();
+  const [body, arch] = [await layer(bodyFile), await layer(archFile)];
+  const base = () => sharp({ create: { width: OW, height: OH, channels: 4, background: ivory } });
+  const both = await base().composite([{ input: body }, { input: arch }]).png().toBuffer();
+  const bodyOnly = await base().composite([{ input: body }]).png().toBuffer();
+  const archOnly = await base().composite([{ input: arch }]).png().toBuffer();
+  const overlay = `<svg xmlns="http://www.w3.org/2000/svg" width="${OW}" height="${OH}">
+    <path d="${catmull(ridgeOut, false)}" fill="none" stroke="#00d0ff" stroke-width="3"/>
+    <path d="${catmull(slotOut, true)}" fill="rgba(255,255,0,.25)" stroke="#ffee00" stroke-width="2.5"/>
   </svg>`;
-  const full = await sharp(SRC).composite([{ input: Buffer.from(svg) }]).png().toBuffer();
-  await sharp(full).extract({ left: 100, top: 280, width: 780, height: 520 }).png().toFile("scripts/.trace-debug.png");
-  console.log("wrote scripts/.trace-debug.png");
+  const annotated = await sharp(both).composite([{ input: Buffer.from(overlay) }]).png().toBuffer();
+  const sheet = await sharp({ create: { width: OW, height: OH * 4, channels: 4, background: ivory } })
+    .composite([
+      { input: both, top: 0, left: 0 },
+      { input: bodyOnly, top: OH, left: 0 },
+      { input: archOnly, top: OH * 2, left: 0 },
+      { input: annotated, top: OH * 3, left: 0 },
+    ])
+    .png()
+    .toFile("scripts/.trace-debug.png");
+  console.log("wrote scripts/.trace-debug.png", sheet.width, "x", sheet.height);
 }
