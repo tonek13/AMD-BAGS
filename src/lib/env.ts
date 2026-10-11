@@ -43,7 +43,8 @@ export function requireSanityEnv(): ServerSanityEnv {
   if (!check.ok) {
     throw new ConfigError(
       `Sanity is not configured:\n  - ${check.problems.join("\n  - ")}\n` +
-        `Set these in .env.local (see .env.example), or set SHOP_DATA_SOURCE=demo to run on the sample bags.`,
+        `Set these in .env.local (see .env.example); on Vercel: Project → Settings → Environment Variables, then redeploy.\n` +
+        `To run on the built-in SAMPLE bags instead, set SHOP_DATA_SOURCE=demo.`,
     );
   }
   const apiHost = process.env.SANITY_API_HOST?.trim() || undefined;
