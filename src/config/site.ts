@@ -21,7 +21,7 @@ export interface SiteConfig {
 
 export const siteConfig: SiteConfig = {
   /** Brand name, as given by the owner. Change it here and it updates everywhere. */
-  brandName: "maisonhook",
+  brandName: "MaisonHook",
   tagline: "Handmade crochet bags",
   description:
     "Chunky, hand-crocheted bags made slowly in small batches. Browse the collection and order by WhatsApp.",
