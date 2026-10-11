@@ -1,0 +1,186 @@
+{
+  "note": "Starting point for the optional import (npm run import:products). Taken from the design-review sample data: names, descriptions and prices are PLACEHOLDERS for the owner to review. Photos are the owner's real photographs; several photos of the same bag are listed under that one bag.",
+  "collections": [
+    {
+      "slug": "clutch",
+      "name": "Clutches",
+      "displayOrder": 1
+    },
+    {
+      "slug": "top-handle",
+      "name": "Top handle",
+      "displayOrder": 2
+    },
+    {
+      "slug": "tote",
+      "name": "Totes & baskets",
+      "displayOrder": 3
+    }
+  ],
+  "products": [
+    {
+      "slug": "apricot-arch-bag",
+      "name": "Apricot Arch",
+      "description": "A small top-handle bag worked in vertical ribs, with a rolled, braided arch handle that sits comfortably in the hand or the crook of an arm. Gold-toned rings join the handle to the body.",
+      "samplePrice": 88,
+      "collection": "top-handle",
+      "colors": [
+        {
+          "name": "Peach",
+          "hex": "#f0b98d",
+          "hex2": null
+        }
+      ],
+      "featured": true,
+      "displayOrder": 1,
+      "photos": [
+        {
+          "file": "images/products/peach-arch-bag-denim.jpg",
+          "alt": "Peach crochet top-handle bag with a braided arch handle resting against denim",
+          "hotspot": {
+            "x": 0.5,
+            "y": 0.55
+          }
+        }
+      ]
+    },
+    {
+      "slug": "noir-nest-bag",
+      "name": "Noir Nest",
+      "description": "A plump rounded bag in black with two braided handles joined by gold-toned rings. The chunky stitches catch the light and keep their shape.",
+      "samplePrice": 92,
+      "collection": "top-handle",
+      "colors": [
+        {
+          "name": "Black",
+          "hex": "#1d1a1b",
+          "hex2": null
+        }
+      ],
+      "featured": false,
+      "displayOrder": 2,
+      "photos": [
+        {
+          "file": "images/products/black-nest-bag-satin.jpg",
+          "alt": "Black chunky crochet bag with two braided handles and gold rings on cream satin",
+          "hotspot": {
+            "x": 0.5,
+            "y": 0.62
+          }
+        }
+      ]
+    },
+    {
+      "slug": "bordeaux-clutch",
+      "name": "Bordeaux Clutch",
+      "description": "A relaxed, wide clutch in rich burgundy with an integrated cut-out handle. Dense, chunky stitches give it a sculpted shape that holds on its own.",
+      "samplePrice": 78,
+      "collection": "clutch",
+      "colors": [
+        {
+          "name": "Burgundy",
+          "hex": "#6b1631",
+          "hex2": null
+        }
+      ],
+      "featured": true,
+      "displayOrder": 3,
+      "photos": [
+        {
+          "file": "images/products/burgundy-clutch-stone-wall.jpg",
+          "alt": "Burgundy crochet clutch with a cut-out handle sitting on a sunlit stone wall",
+          "hotspot": {
+            "x": 0.11,
+            "y": 0.45
+          }
+        },
+        {
+          "file": "images/products/burgundy-clutch-overhead.jpg",
+          "alt": "The same burgundy crochet clutch seen from above on paving stones",
+          "hotspot": {
+            "x": 0.42,
+            "y": 0.5
+          }
+        }
+      ]
+    },
+    {
+      "slug": "creme-crescent-bag",
+      "name": "Crème Crescent",
+      "description": "A generous half-moon tote in warm cream with smooth wooden handles and a golden tassel. Tightly worked stitches give the body a woven, structured look.",
+      "samplePrice": 118,
+      "collection": "tote",
+      "colors": [
+        {
+          "name": "Cream",
+          "hex": "#e3cfa6",
+          "hex2": null
+        }
+      ],
+      "featured": true,
+      "displayOrder": 4,
+      "photos": [
+        {
+          "file": "images/products/cream-crescent-bag-tassel.jpg",
+          "alt": "Cream half-moon crochet tote with wooden handles and a golden tassel held by a woman in a yellow dress",
+          "hotspot": {
+            "x": 0.52,
+            "y": 0.52
+          }
+        }
+      ]
+    },
+    {
+      "slug": "cloud-clutch",
+      "name": "Cloud Clutch",
+      "description": "A bright white clutch worked in puffy, textured stitches with a braided edge around the carry opening. Light, airy and easy to dress up or down.",
+      "samplePrice": 74,
+      "collection": "clutch",
+      "colors": [
+        {
+          "name": "White",
+          "hex": "#f7f4ee",
+          "hex2": null
+        }
+      ],
+      "featured": false,
+      "displayOrder": 5,
+      "photos": [
+        {
+          "file": "images/products/white-clutch-jasmine.jpg",
+          "alt": "White crochet clutch with puff stitches held among white jasmine flowers",
+          "hotspot": {
+            "x": 0.5,
+            "y": 0.58
+          }
+        }
+      ]
+    },
+    {
+      "slug": "cherry-ripple-basket",
+      "name": "Cherry Ripple",
+      "description": "A structured little basket bag worked in alternating burgundy and cream stitches that ripple around the body, finished with a braided carry handle.",
+      "samplePrice": 84,
+      "collection": "tote",
+      "colors": [
+        {
+          "name": "Burgundy & cream",
+          "hex": "#6b1631",
+          "hex2": "#f1d9d0"
+        }
+      ],
+      "featured": true,
+      "displayOrder": 6,
+      "photos": [
+        {
+          "file": "images/products/burgundy-cream-basket-steps.jpg",
+          "alt": "Burgundy and cream two-tone crochet basket bag with a braided handle on stone steps",
+          "hotspot": {
+            "x": 0.55,
+            "y": 0.72
+          }
+        }
+      ]
+    }
+  ]
+}
