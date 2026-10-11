@@ -157,6 +157,28 @@ function buildFoundation() {
   return { d: smoothPath(pts), start: pts[0], bottom: Math.max(...OUT.map((p) => p[1])) };
 }
 
+// ── the arch reveal path ──────────────────────────────────────────────────
+/**
+ * The braided arch layer has rounded ends that stick out past the end of the ridge line, so the
+ * stroke that reveals it runs a little beyond both ends. (A round cap would do the same but paints
+ * a dot before the stroke starts drawing.)
+ */
+function buildArchReveal(): string {
+  const pts = bagTrace.ridgePoints as Pt[];
+  const away = (a: Pt, b: Pt): Pt => {
+    const dx = a[0] - b[0];
+    const dy = a[1] - b[1];
+    const len = Math.hypot(dx, dy) || 1;
+    return [dx / len, dy / len];
+  };
+  const EXTEND = 130;
+  const d0 = away(pts[0], pts[1]);
+  const d1 = away(pts[pts.length - 1], pts[pts.length - 2]);
+  const pre: Pt = [pts[0][0] + d0[0] * EXTEND, pts[0][1] + d0[1] * EXTEND];
+  const post: Pt = [pts[pts.length - 1][0] + d1[0] * EXTEND, pts[pts.length - 1][1] + d1[1] * EXTEND];
+  return smoothPath([pre, ...pts, post]);
+}
+
 // ── loose strand ──────────────────────────────────────────────────────────
 function chaikin(points: Pt[], iterations: number): Pt[] {
   let pts = points;
@@ -203,7 +225,7 @@ export const bag = (() => {
     strand: buildStrand(foundation.start),
     outline: bagTrace.outline,
     slot: bagTrace.slot,
-    ridge: bagTrace.ridge,
+    ridgeReveal: buildArchReveal(),
     image: bagTrace.image,
     /** Stroke width that is certain to cover every pixel of the arch layer. */
     archStroke: Math.ceil(bagTrace.archReach * 2 + 24),

@@ -11,7 +11,7 @@ import { bag, shade, VIEW } from "./bagGeometry";
  * Elements the timeline drives carry a `data-s` hook.
  */
 export function BagIllustration() {
-  const { rows, foundation, strand, outline, slot, ridge, image, archStroke, discRadius, shadow } = bag;
+  const { rows, foundation, strand, outline, slot, ridgeReveal, image, archStroke, discRadius, shadow } = bag;
 
   return (
     <svg
@@ -52,7 +52,7 @@ export function BagIllustration() {
         {/* ARCH reveal: the handle opening, then a wide stroke that travels along the arch */}
         <mask id="story-reveal-arch" maskUnits="userSpaceOnUse" x="0" y="0" width={VIEW} height={VIEW}>
           <path data-s="slot-reveal" d={slot} fill="#fff" stroke="#fff" strokeWidth="22" strokeLinejoin="round" />
-          <path data-s="arch-reveal" d={ridge} fill="none" stroke="#fff" strokeWidth={archStroke} strokeLinecap="butt" />
+          <path data-s="arch-reveal" d={ridgeReveal} fill="none" stroke="#fff" strokeWidth={archStroke} strokeLinecap="butt" />
         </mask>
       </defs>
 
