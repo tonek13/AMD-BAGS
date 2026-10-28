@@ -59,6 +59,25 @@ export function scrollToTarget(target: string | HTMLElement) {
   history.replaceState(null, "", el.id ? `#${el.id}` : location.pathname);
 }
 
+/**
+ * onClick for links written as "/#section", which work from any page. On the homepage they scroll
+ * smoothly instead of navigating; anywhere else the link navigates as usual.
+ *
+ * The address is read when the link is clicked, never while rendering: a router hook such as
+ * usePathname() in the header would stop pages with a dynamic address (/collections/<shelf>) from
+ * being prerendered.
+ */
+export function handleHomeAnchorClick(e: React.MouseEvent<HTMLAnchorElement>) {
+  if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+  if (window.location.pathname !== "/") return;
+  const href = e.currentTarget.getAttribute("href");
+  if (!href || !href.startsWith("/#")) return;
+  const el = document.querySelector<HTMLElement>(href.slice(1));
+  if (!el) return;
+  e.preventDefault();
+  scrollToTarget(el);
+}
+
 /** onClick handler for in-page "#anchor" links. Lets modified clicks through. */
 export function handleAnchorClick(e: React.MouseEvent<HTMLAnchorElement>) {
   if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;

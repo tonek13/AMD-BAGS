@@ -9,13 +9,17 @@
 //   • sold-out products stay visible; filters, featured section and settings come from the data
 //   • the signed webhook rejects missing / wrong / malformed signatures and accepts a correct one
 //   • published changes appear only after a valid webhook (the cache really is invalidated)
+//   • collections switched on as "own section" get a shelf, a page and a menu entry (and only those)
 //   • the cart check endpoint reports hidden / draft / sold-out / re-priced bags
+//   • orders are validated and priced on the server, then emailed to the owner (through a stand-in for Resend)
 //   • the Studio route is separate from the storefront
 //   • a missing Sanity configuration fails the build loudly instead of showing sample products
 //
 // It uses a stand-in for the Sanity API, so it proves OUR code and queries behave. It cannot prove how the real
 // Sanity service behaves: after you connect a real project, also run the owner walkthrough in docs/OWNER-GUIDE.md.
 import { spawn, spawnSync } from "node:child_process";
+import { createServer } from "node:http";
+import { randomUUID } from "node:crypto";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createRequire } from "node:module";
@@ -28,6 +32,7 @@ const { encodeSignatureHeader } = require("@sanity/webhook");
 const root = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
 const MOCK_PORT = 4010;
 const APP_PORT = 3101;
+const RESEND_PORT = 4011;
 const SECRET = "test-secret-with-enough-length-1234567890";
 const APP = `http://localhost:${APP_PORT}`;
 const MOCK = `http://localhost:${MOCK_PORT}`;
@@ -42,7 +47,30 @@ const env = {
   SANITY_CDN_BASE_URL: MOCK,
   SANITY_REVALIDATE_SECRET: SECRET,
   NEXT_DIST_DIR: ".next-test",
+  // Orders are emailed through Resend; the tests point it at a stand-in server (below).
+  RESEND_API_KEY: "re_test_key",
+  ORDER_EMAIL_TO: "owner@example.com",
+  RESEND_BASE_URL: `http://localhost:${RESEND_PORT}`,
 };
+
+// Stand-in for api.resend.com: records every email it is asked to send, or refuses them on demand.
+const sentEmails = [];
+let resendRefuses = false;
+const resendMock = createServer((req, res) => {
+  let body = "";
+  req.on("data", (c) => (body += c));
+  req.on("end", () => {
+    res.setHeader("content-type", "application/json");
+    if (resendRefuses) {
+      res.statusCode = 422;
+      res.end(JSON.stringify({ name: "validation_error", message: "stand-in refusal", statusCode: 422 }));
+      return;
+    }
+    sentEmails.push({ auth: req.headers.authorization, idempotencyKey: req.headers["idempotency-key"], body: JSON.parse(body) });
+    res.end(JSON.stringify({ id: `mock-${sentEmails.length}` }));
+  });
+});
+resendMock.listen(RESEND_PORT);
 
 let passed = 0;
 const failures = [];
@@ -100,8 +128,24 @@ async function checkCart(slugs) {
   return { status: r.status, json: await r.json().catch(() => ({})) };
 }
 
+async function placeOrder(overrides = {}) {
+  const order = {
+    orderId: randomUUID(),
+    items: [
+      { slug: "bordeaux-clutch", quantity: 2 },
+      { slug: "apricot-arch-bag", quantity: 1 },
+    ],
+    customer: { name: "Jane <b>Doe</b>", phone: "+961 70 123 456", city: "Beirut", address: "Hamra Street, building 5, 3rd floor", notes: "" },
+    expectedTotalCents: 24450,
+    ...overrides,
+  };
+  const r = await fetch(`${APP}/api/orders`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(order) });
+  return { status: r.status, json: await r.json().catch(() => ({})), order };
+}
+
 function cleanup() {
   for (const c of children) c.kill();
+  resendMock.close();
 }
 process.on("exit", cleanup);
 
@@ -247,6 +291,112 @@ try {
   check("rejects a body that is not JSON (400)", bad.status === 400);
   check("rejects a body without a slug list (400)", (await checkCart("bordeaux-clutch")).status === 400);
   check("rejects more than 50 slugs (400)", (await checkCart(Array.from({ length: 51 }, (_, i) => `s${i}`))).status === 400);
+
+  // ── D2. collections with their own section ─────────────────────────────
+  console.log("\nSections (collections shown as their own shelf, page and menu entry)");
+  await setData(dataset());
+  await webhook({ _type: "collection", _id: "col-clutches" });
+  await webhook({ _type: "product", _id: "p-bordeaux" });
+  await webhook({ _type: "shopSettings", _id: "shopSettings" });
+  html = await page();
+  check("a collection with the switch on gets a shelf that links to its own page", html.includes('href="/collections/clutches"') && html.includes("See the whole shelf"));
+  check('bags that are not in a section go on a final "More bags" shelf', html.includes("More bags") && html.includes("Apricot Arch"));
+  check("a collection with the switch off gets no section or page link", !html.includes("/collections/totes"));
+  check("an enabled collection without bags gets no section", !html.includes("/collections/empty-shelf"));
+  check("a draft collection never gets a section", !html.includes("/collections/draft-collection"));
+  check("the menu lists the sections", html.includes("Shop by shelf"));
+  check('the "customize your bag" block shows the contact email from Shop Settings', html.includes("Your bag, ") && html.includes("mailto:hello@example.com"));
+  const clutchPage = await fetch(`${APP}/collections/clutches`);
+  const clutchHtml = await clutchPage.text();
+  check("the section page exists (200)", clutchPage.status === 200, String(clutchPage.status));
+  // Every page also carries all bags in its script data (the shop context), so look at the visible markup only.
+  const visible = (markup) => markup.replace(/<script[\s\S]*?<\/script>/g, "");
+  const clutchVisible = visible(clutchHtml);
+  check("the section page lists its own bags only", clutchVisible.includes("Bordeaux Clutch") && clutchVisible.includes("Cloud Clutch") && !clutchVisible.includes("Apricot Arch"));
+  check("the section page has the collection name as its heading", /<h1[^>]*>[^<]*Clutches/.test(clutchVisible));
+  // A shelf that is not in the build is rendered on its first visit. Its first answer is already on the wire
+  // (200) when the page finds out there is no such shelf, so it shows the "not found" page; the finished
+  // result is then cached with the real 404 status for every later visit.
+  for (const missing of ["totes", "empty-shelf", "draft-collection", "no-such-shelf"]) {
+    const first = visible(await (await fetch(`${APP}/collections/${missing}`)).text());
+    check(`/collections/${missing} never shows a shelf`, !first.includes("The shelf") && !first.includes("Bordeaux Clutch"));
+    const again = await fetch(`${APP}/collections/${missing}`);
+    check(`/collections/${missing} is a 404 from then on`, again.status === 404, `status ${again.status}`);
+  }
+  await setData(dataset().map((d) => (d._id === "col-clutches" ? { ...d, showAsSection: false } : d)));
+  await webhook({ _type: "collection", _id: "col-clutches" });
+  html = await page();
+  check("switching the section off removes its page link after the webhook", !html.includes('href="/collections/clutches"'));
+  const switchedOff = visible(await (await fetch(`${APP}/collections/clutches`)).text());
+  check("...and its page stops showing the shelf", !switchedOff.includes("The shelf") && !switchedOff.includes("Bordeaux Clutch"));
+  check("...and is a 404 from then on", (await fetch(`${APP}/collections/clutches`)).status === 404);
+  await setData(dataset());
+  await webhook({ _type: "collection", _id: "col-clutches" });
+
+  // ── D3. placing an order ───────────────────────────────────────────────
+  console.log("\nOrders (checked on the server, then emailed to the owner)");
+  check("GET /api/orders is not allowed (405)", (await fetch(`${APP}/api/orders`)).status === 405);
+  const notJson = await fetch(`${APP}/api/orders`, { method: "POST", body: "nope" });
+  check("rejects a body that is not JSON (400)", notJson.status === 400);
+  let order = await placeOrder({ customer: { name: "", phone: "abc", city: "", address: "x", notes: "" } });
+  check(
+    "rejects missing or invalid details (400) and says which fields",
+    order.status === 400 && order.json.fields?.name && order.json.fields?.phone && order.json.fields?.city && order.json.fields?.address,
+    JSON.stringify(order.json),
+  );
+  order = await placeOrder({ items: [] });
+  check("rejects an empty bag (400)", order.status === 400);
+  order = await placeOrder({ items: [{ slug: "bordeaux-clutch", quantity: 0 }] });
+  check("rejects a quantity of zero (400)", order.status === 400);
+  order = await placeOrder({ orderId: "not-a-uuid" });
+  check("rejects a missing order reference (400)", order.status === 400);
+  check("nothing was emailed for any of the rejected orders", sentEmails.length === 0);
+
+  order = await placeOrder();
+  check("a valid order is accepted (200) and gets a reference", order.status === 200 && order.json.ok === true && /^[0-9A-F]{8}$/.test(order.json.reference ?? ""), JSON.stringify(order.json));
+  const mail = sentEmails[0];
+  check(
+    "exactly one email was sent, to the owner, signed with the Resend key",
+    sentEmails.length === 1 && mail?.auth === "Bearer re_test_key" && JSON.stringify(mail.body.to) === JSON.stringify(["owner@example.com"]),
+  );
+  check("the email subject has the reference, bag count, total and customer", mail?.body.subject === `New order ${order.json.reference} · 3 bags · €244.50 · Jane <b>Doe</b>`, mail?.body.subject);
+  check(
+    "the email lists the bags with live prices and the total to collect",
+    /2 × Bordeaux Clutch @ €78\.00 = €156\.00/.test(mail?.body.text) && /1 × Apricot Arch @ €88\.50/.test(mail.body.text) && /TOTAL TO COLLECT: €244\.50/.test(mail.body.text),
+  );
+  check(
+    "the email carries the delivery details and says cash on delivery",
+    /Phone: \+961 70 123 456/.test(mail?.body.text) && /Address: Hamra Street/.test(mail.body.text) && /cash on delivery/i.test(mail.body.text),
+  );
+  check("customer text is escaped in the HTML email", !/<b>Doe<\/b>/.test(mail?.body.html) && mail.body.html.includes("&lt;b&gt;Doe&lt;/b&gt;"));
+  check("the order reference is sent as the idempotency key (a retry cannot email twice)", mail?.idempotencyKey?.startsWith("order-"));
+
+  const sentBefore = sentEmails.length;
+  order = await placeOrder({ items: [{ slug: "cloud-clutch", quantity: 1 }], expectedTotalCents: 6400 });
+  check("a sold-out bag cannot be ordered (409)", order.status === 409 && order.json.code === "unavailable");
+  order = await placeOrder({ items: [{ slug: "secret-bag", quantity: 1 }], expectedTotalCents: 9900 });
+  check("a hidden bag cannot be ordered (409)", order.status === 409 && order.json.code === "unavailable");
+  order = await placeOrder({ items: [{ slug: "does-not-exist", quantity: 1 }], expectedTotalCents: 100 });
+  check("an unknown bag cannot be ordered (409)", order.status === 409 && order.json.code === "unavailable");
+  order = await placeOrder({ expectedTotalCents: 100 });
+  check("a total that no longer matches the live prices is refused (409)", order.status === 409 && order.json.code === "changed");
+  await setData(dataset().map((d) => (d._id === "p-bordeaux" ? { ...d, price: 120 } : d)));
+  order = await placeOrder();
+  check("a price change since the customer looked is refused, never silently re-priced (409)", order.status === 409 && order.json.code === "changed");
+  await setData(dataset());
+  check("no email went out for any refused order", sentEmails.length === sentBefore);
+
+  order = await placeOrder({ website: "http://spam.example" });
+  check("a filled-in honeypot looks like success but sends nothing", order.status === 200 && sentEmails.length === sentBefore);
+
+  resendRefuses = true;
+  order = await placeOrder();
+  check("when the email service refuses, the customer is told it failed (502), not that it worked", order.status === 502 && order.json.code === "email-failed", JSON.stringify(order.json));
+  resendRefuses = false;
+
+  let limited = false;
+  for (let i = 0; i < 12 && !limited; i++) limited = (await placeOrder()).status === 429;
+  check("too many orders from one address are slowed down (429)", limited);
 
   // ── E. the Studio is separate from the storefront ──────────────────────
   console.log("\nStudio route");

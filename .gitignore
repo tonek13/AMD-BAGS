@@ -46,4 +46,3 @@ scripts/.trace-debug.png
 
 # local CMS test build
 /.next-test/
-/.next-demo/

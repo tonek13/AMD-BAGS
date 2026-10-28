@@ -45,6 +45,12 @@ html {
   text-size-adjust: 100%;
   scroll-padding-top: var(--header-h);
   background: var(--ivory);
+  /*
+   * The scroll story pins a section and swaps in a spacer of its own; while it does, the document
+   * above the reader briefly changes height. With scroll anchoring on, the browser "corrects" for
+   * that by moving the scroll position, which is what threw a refreshed page to the wrong place.
+   */
+  overflow-anchor: none;
 }
 
 html.scroll-locked,

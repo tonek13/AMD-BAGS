@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import Image from "next/image";
 import { fromCents } from "@/lib/format";
 import {
   ORDER_LIMITS,
@@ -13,7 +14,8 @@ import {
 } from "@/lib/orders";
 import type { CartLineView } from "@/lib/cart-lines";
 import { useShop } from "./shop-context";
-import styles from "./CartDrawer.module.css";
+import cart from "./CartDrawer.module.css";
+import styles from "./Checkout.module.css";
 
 const ORDER_TIMEOUT_MS = 20_000;
 
@@ -53,7 +55,7 @@ interface CheckoutPanelProps {
 const FIELD_ORDER: (keyof OrderCustomer)[] = ["name", "phone", "city", "address", "notes"];
 
 export function CheckoutPanel({ lines, totalCents, values, onValuesChange, orderId, onBack, onClose, onPlaced, onNeedsReview }: CheckoutPanelProps) {
-  const { formatMoney, clearCart } = useShop();
+  const { formatMoney, formatPrice, clearCart } = useShop();
   const [errors, setErrors] = useState<CustomerErrors>({});
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
@@ -132,110 +134,168 @@ export function CheckoutPanel({ lines, totalCents, values, onValuesChange, order
   }
 
   return (
-    <div className={styles.panel}>
-      <header className={styles.header}>
-        <button type="button" className={styles.back} onClick={onBack} disabled={submitting}>
-          <svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true">
-            <path d="M17 10H4M9 4l-6 6 6 6" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-          Bag
-        </button>
-        <h2 className={styles.title}>Checkout</h2>
-        <button type="button" className={styles.close} onClick={onClose} aria-label="Close checkout">
+    <div className={cart.panel}>
+      <header className={cart.header}>
+        <h2 className={cart.title}>Checkout</h2>
+        <button type="button" className={cart.close} onClick={onClose} aria-label="Close checkout">
           <svg viewBox="0 0 20 20" width="20" height="20" aria-hidden="true">
             <path d="M4 4l12 12M16 4L4 16" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
           </svg>
         </button>
       </header>
 
-      <div className={styles.checkoutScroll}>
-        <ul className={styles.summary} aria-label="Your order">
-          {lines.map((l) => (
-            <li key={l.slug}>
-              <span>
-                {l.quantity} × {l.name}
-              </span>
-              <span>{formatMoney(fromCents(l.lineCents))}</span>
-            </li>
-          ))}
-        </ul>
+      <ol className={styles.steps} aria-label="Checkout progress">
+        <li>
+          <button type="button" className={`${styles.step} ${styles.stepDone}`} onClick={onBack} disabled={submitting}>
+            <span className={styles.stepNo} aria-hidden="true">
+              ✓
+            </span>
+            Bag
+          </button>
+        </li>
+        <li className={styles.stepLine} aria-hidden="true" />
+        <li>
+          <span className={`${styles.step} ${styles.current}`} aria-current="step">
+            <span className={styles.stepNo} aria-hidden="true">
+              2
+            </span>
+            Details
+          </span>
+        </li>
+        <li className={styles.stepLine} aria-hidden="true" />
+        <li>
+          <span className={styles.step}>
+            <span className={styles.stepNo} aria-hidden="true">
+              3
+            </span>
+            Done
+          </span>
+        </li>
+      </ol>
+
+      <div className={styles.scroll}>
+        <section className={styles.summary} aria-label="Your order">
+          <ul className={styles.summaryList}>
+            {lines.map((l) => {
+              const photo = l.product?.images[0];
+              return (
+                <li key={l.slug} className={styles.item}>
+                  <div className={styles.thumb}>
+                    <span className={styles.qty} aria-hidden="true">
+                      {l.quantity}
+                    </span>
+                    {photo && (
+                      <div className={styles.thumbImg} style={{ position: "absolute", inset: 0 }}>
+                        <Image
+                          src={photo.src}
+                          alt=""
+                          fill
+                          sizes="58px"
+                          style={{ objectFit: "cover", objectPosition: `${photo.focal?.x ?? 50}% ${photo.focal?.y ?? 50}%` }}
+                        />
+                      </div>
+                    )}
+                  </div>
+                  <div>
+                    <p className={styles.itemName}>{l.name}</p>
+                    <p className={styles.itemUnit}>
+                      <span className="sr-only">Quantity {l.quantity}, </span>
+                      {formatPrice(l.unitPrice)} each
+                    </p>
+                  </div>
+                  <p className={styles.itemTotal}>{formatMoney(fromCents(l.lineCents))}</p>
+                </li>
+              );
+            })}
+          </ul>
+          <div className={styles.totalRow}>
+            <span>Total</span>
+            <strong>{total}</strong>
+          </div>
+        </section>
 
         <form id="checkout-form" ref={form} className={styles.form} onSubmit={submit} noValidate>
-          <p className={styles.formTitle}>Where should we deliver?</p>
+          <fieldset className={styles.section}>
+            <legend className={styles.sectionTitle}>Contact</legend>
+            <Field id="co-name" label="Full name" error={errors.name}>
+              <input
+                id="co-name"
+                name="name"
+                type="text"
+                placeholder=" "
+                autoComplete="name"
+                maxLength={ORDER_LIMITS.name}
+                value={values.name}
+                onChange={(e) => set("name", e.target.value)}
+                aria-invalid={errors.name ? true : undefined}
+                aria-describedby={errors.name ? "co-name-error" : undefined}
+                required
+              />
+            </Field>
+            <Field id="co-phone" label="Phone number" error={errors.phone} hint="We’ll call or message you to confirm the delivery.">
+              <input
+                id="co-phone"
+                name="phone"
+                type="tel"
+                inputMode="tel"
+                placeholder=" "
+                autoComplete="tel"
+                maxLength={ORDER_LIMITS.phone}
+                value={values.phone}
+                onChange={(e) => set("phone", e.target.value)}
+                aria-invalid={errors.phone ? true : undefined}
+                aria-describedby={errors.phone ? "co-phone-error" : "co-phone-hint"}
+                required
+              />
+            </Field>
+          </fieldset>
 
-          <Field id="co-name" label="Full name" error={errors.name}>
-            <input
-              id="co-name"
-              name="name"
-              type="text"
-              autoComplete="name"
-              maxLength={ORDER_LIMITS.name}
-              value={values.name}
-              onChange={(e) => set("name", e.target.value)}
-              aria-invalid={errors.name ? true : undefined}
-              aria-describedby={errors.name ? "co-name-error" : undefined}
-              required
-            />
-          </Field>
-
-          <Field id="co-phone" label="Phone number" error={errors.phone} hint="We’ll call or message you to confirm the delivery.">
-            <input
-              id="co-phone"
-              name="phone"
-              type="tel"
-              inputMode="tel"
-              autoComplete="tel"
-              maxLength={ORDER_LIMITS.phone}
-              value={values.phone}
-              onChange={(e) => set("phone", e.target.value)}
-              aria-invalid={errors.phone ? true : undefined}
-              aria-describedby={errors.phone ? "co-phone-error" : "co-phone-hint"}
-              required
-            />
-          </Field>
-
-          <Field id="co-city" label="City or area" error={errors.city}>
-            <input
-              id="co-city"
-              name="city"
-              type="text"
-              autoComplete="address-level2"
-              maxLength={ORDER_LIMITS.city}
-              value={values.city}
-              onChange={(e) => set("city", e.target.value)}
-              aria-invalid={errors.city ? true : undefined}
-              aria-describedby={errors.city ? "co-city-error" : undefined}
-              required
-            />
-          </Field>
-
-          <Field id="co-address" label="Address" error={errors.address} hint="Street, building, floor, landmark…">
-            <textarea
-              id="co-address"
-              name="address"
-              rows={3}
-              autoComplete="street-address"
-              maxLength={ORDER_LIMITS.address}
-              value={values.address}
-              onChange={(e) => set("address", e.target.value)}
-              aria-invalid={errors.address ? true : undefined}
-              aria-describedby={errors.address ? "co-address-error" : "co-address-hint"}
-              required
-            />
-          </Field>
-
-          <Field id="co-notes" label="Delivery notes (optional)" error={errors.notes}>
-            <textarea
-              id="co-notes"
-              name="notes"
-              rows={2}
-              maxLength={ORDER_LIMITS.notes}
-              value={values.notes}
-              onChange={(e) => set("notes", e.target.value)}
-              aria-invalid={errors.notes ? true : undefined}
-              aria-describedby={errors.notes ? "co-notes-error" : undefined}
-            />
-          </Field>
+          <fieldset className={styles.section}>
+            <legend className={styles.sectionTitle}>Delivery address</legend>
+            <Field id="co-city" label="City or area" error={errors.city}>
+              <input
+                id="co-city"
+                name="city"
+                type="text"
+                placeholder=" "
+                autoComplete="address-level2"
+                maxLength={ORDER_LIMITS.city}
+                value={values.city}
+                onChange={(e) => set("city", e.target.value)}
+                aria-invalid={errors.city ? true : undefined}
+                aria-describedby={errors.city ? "co-city-error" : undefined}
+                required
+              />
+            </Field>
+            <Field id="co-address" label="Street, building, floor" error={errors.address}>
+              <textarea
+                id="co-address"
+                name="address"
+                rows={2}
+                placeholder=" "
+                autoComplete="street-address"
+                maxLength={ORDER_LIMITS.address}
+                value={values.address}
+                onChange={(e) => set("address", e.target.value)}
+                aria-invalid={errors.address ? true : undefined}
+                aria-describedby={errors.address ? "co-address-error" : undefined}
+                required
+              />
+            </Field>
+            <Field id="co-notes" label="Delivery notes (optional)" error={errors.notes}>
+              <textarea
+                id="co-notes"
+                name="notes"
+                rows={2}
+                placeholder=" "
+                maxLength={ORDER_LIMITS.notes}
+                value={values.notes}
+                onChange={(e) => set("notes", e.target.value)}
+                aria-invalid={errors.notes ? true : undefined}
+                aria-describedby={errors.notes ? "co-notes-error" : undefined}
+              />
+            </Field>
+          </fieldset>
 
           {/* Honeypot: people never see or fill this; simple bots do. */}
           <div className={styles.hp} aria-hidden="true">
@@ -245,27 +305,50 @@ export function CheckoutPanel({ lines, totalCents, values, onValuesChange, order
             </label>
           </div>
 
-          <div className={styles.payment}>
-            <span className={styles.paymentDot} aria-hidden="true" />
-            <div>
-              <p className={styles.paymentTitle}>Cash on delivery</p>
-              <p className={styles.paymentText}>Pay in cash when your order arrives. There is no online payment.</p>
+          <fieldset className={styles.section}>
+            <legend className={styles.sectionTitle}>Payment</legend>
+            <div className={styles.pay}>
+              <span className={styles.radio} aria-hidden="true" />
+              <div className={styles.payText}>
+                <p className={styles.payTitle}>Cash on delivery</p>
+                <p className={styles.payNote}>Pay in cash when your order arrives. Nothing to pay online.</p>
+              </div>
+              <svg className={styles.payIcon} viewBox="0 0 28 28" width="28" height="28" aria-hidden="true">
+                <rect x="3" y="7" width="22" height="14" rx="2" fill="none" stroke="currentColor" strokeWidth="1.7" />
+                <circle cx="14" cy="14" r="3.2" fill="none" stroke="currentColor" strokeWidth="1.7" />
+                <path d="M7 10.5v.01M21 17.5v.01" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
+              </svg>
             </div>
-          </div>
+          </fieldset>
         </form>
+
+        <ul className={styles.trust}>
+          <li>
+            <Tick />
+            Every bag is made by hand
+          </li>
+          <li>
+            <Tick />
+            We confirm every order by phone
+          </li>
+          <li>
+            <Tick />
+            No account needed
+          </li>
+        </ul>
       </div>
 
-      <footer className={styles.footer}>
-        <div className={styles.subtotal}>
+      <footer className={styles.bar}>
+        <div className={styles.barTotal}>
           <span>
             Total · {count} {count === 1 ? "bag" : "bags"}
           </span>
           <strong>{total}</strong>
         </div>
-        <button type="submit" form="checkout-form" className="btn" disabled={submitting}>
+        <button type="submit" form="checkout-form" className={`btn ${styles.confirm}`} disabled={submitting}>
           {submitting ? "Placing your order…" : "Confirm order"}
         </button>
-        <p className={`${styles.status} ${formError ? styles.error : ""}`} role={formError ? "alert" : "status"} aria-live="polite">
+        <p className={`${cart.status} ${formError ? cart.error : ""}`} role={formError ? "alert" : "status"} aria-live="polite">
           {formError}
         </p>
       </footer>
@@ -276,17 +359,32 @@ export function CheckoutPanel({ lines, totalCents, values, onValuesChange, order
 function Field({ id, label, error, hint, children }: { id: string; label: string; error?: string; hint?: string; children: React.ReactNode }) {
   return (
     <div className={`${styles.field} ${error ? styles.invalid : ""}`}>
-      <label htmlFor={id}>{label}</label>
-      {children}
+      <div className={styles.control}>
+        {children}
+        <label htmlFor={id}>{label}</label>
+      </div>
       {error ? (
-        <p id={`${id}-error`} className={styles.fieldError}>
+        <p id={`${id}-error`} className={styles.error}>
+          <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
+            <circle cx="8" cy="8" r="6.5" fill="none" stroke="currentColor" strokeWidth="1.5" />
+            <path d="M8 4.5v4M8 11v.01" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+          </svg>
           {error}
         </p>
       ) : hint ? (
-        <p id={`${id}-hint`} className={styles.fieldHint}>
+        <p id={`${id}-hint`} className={styles.hint}>
           {hint}
         </p>
       ) : null}
     </div>
+  );
+}
+
+function Tick() {
+  return (
+    <svg viewBox="0 0 18 18" width="16" height="16" aria-hidden="true">
+      <circle cx="9" cy="9" r="7.5" fill="none" stroke="currentColor" strokeWidth="1.5" />
+      <path d="M5.5 9.2l2.4 2.4 4.6-5" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
   );
 }

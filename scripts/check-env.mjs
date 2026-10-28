@@ -55,6 +55,22 @@ if (source !== "sanity" && source !== "demo") {
   note(get("SANITY_API_WRITE_TOKEN") ? "SANITY_API_WRITE_TOKEN is set (only the import script uses it; keep it out of Vercel)." : "No write token: only needed for the optional import script.");
 }
 
+// Order emails (Resend). Needed in every mode: the shop emails each order to the owner.
+const resendKey = get("RESEND_API_KEY");
+const orderTo = get("ORDER_EMAIL_TO");
+lines.push("");
+lines.push("Order emails (Resend):");
+if (!resendKey) bad("RESEND_API_KEY is not set: customers cannot place orders (they are told ordering is not open yet).");
+else ok("RESEND_API_KEY is set");
+if (!orderTo) bad("ORDER_EMAIL_TO is not set: there is nowhere to send orders.");
+else if (orderTo.split(",").some((a) => !/^[^\s@<>,;]+@[^\s@<>,;]+\.[^\s@<>,;]+$/.test(a.trim()))) bad("ORDER_EMAIL_TO contains something that is not an email address.");
+else ok("ORDER_EMAIL_TO is set");
+note(
+  get("ORDER_EMAIL_FROM")
+    ? "ORDER_EMAIL_FROM is set."
+    : "No ORDER_EMAIL_FROM: Resend's test sender (onboarding@resend.dev) is used, and it can only deliver to your own Resend account email. Verify a domain in Resend and set a sender before going live.",
+);
+
 console.log(lines.join("\n"));
 console.log(problems ? `\n${problems} problem${problems > 1 ? "s" : ""} to fix. See .env.example and docs/SANITY-SETUP.md.` : "\nEnvironment looks good.");
 process.exit(problems ? 1 : 0);

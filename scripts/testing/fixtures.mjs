@@ -12,10 +12,10 @@ const swatch = (hex) => ({ _type: "color", hex });
 const slug = (current) => ({ _type: "slug", current });
 
 export const collections = [
-  { _id: "col-clutches", _type: "collection", name: "Clutches", slug: slug("clutches"), displayOrder: 1 },
+  { _id: "col-clutches", _type: "collection", name: "Clutches", slug: slug("clutches"), displayOrder: 1, showAsSection: true },
   { _id: "col-totes", _type: "collection", name: "Totes & baskets", slug: slug("totes"), displayOrder: 2 },
-  { _id: "col-empty", _type: "collection", name: "Empty shelf", slug: slug("empty-shelf"), displayOrder: 3 },
-  { _id: "drafts.col-new", _type: "collection", name: "Draft collection", slug: slug("draft-collection"), displayOrder: 4 },
+  { _id: "col-empty", _type: "collection", name: "Empty shelf", slug: slug("empty-shelf"), displayOrder: 3, showAsSection: true },
+  { _id: "drafts.col-new", _type: "collection", name: "Draft collection", slug: slug("draft-collection"), displayOrder: 4, showAsSection: true },
 ];
 
 export const products = [

@@ -48,7 +48,7 @@ export const shopSettingsType = defineType({
       title: "Brand name",
       type: "string",
       group: "brand",
-      description: "Shown in the website header, footer, browser tab and in the WhatsApp order message.",
+      description: "Shown in the website header, footer, browser tab and in the order emails.",
       validation: (rule) => rule.required().max(40),
     }),
     defineField({
@@ -79,13 +79,13 @@ export const shopSettingsType = defineType({
     }),
     defineField({
       name: "whatsappNumber",
-      title: "WhatsApp number for orders",
+      title: "WhatsApp number",
       type: "string",
       group: "ordering",
       description:
-        "Customers' orders are sent to this number. Country code first, starting with +, e.g. +96181616199. Spaces and dashes are fine.",
+        "Shown in the footer and in “Your bag, your way” so customers can ask for a custom bag. Orders do not use it (they arrive by email). Country code first, starting with +, e.g. +96181616199. Leave empty to hide it.",
       validation: (rule) =>
-        rule.required().custom((value) => {
+        rule.custom((value) => {
           if (!value) return true;
           return isInternationalNumber(value) || "Use the international format: + then the country code and number, e.g. +96181616199.";
         }),
@@ -95,7 +95,7 @@ export const shopSettingsType = defineType({
       title: "Email",
       type: "string",
       group: "contact",
-      description: "Shown in the footer. Leave empty to hide it.",
+      description: "Shown in the footer and in “Your bag, your way” so customers can reach you. Leave empty to hide it. (Orders are emailed to the address set in Vercel, not this one.)",
       validation: (rule) => rule.email(),
     }),
     defineField({

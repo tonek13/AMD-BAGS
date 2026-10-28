@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import { navLinks } from "@/config/site";
 import { selectSections } from "@/lib/selectors";
 import { scrollToTarget } from "@/lib/scroll";
@@ -12,14 +11,13 @@ import styles from "./MenuDrawer.module.css";
 
 /** The menu behind the three-line button: every collection that has its own section, plus the main places on the site. */
 export function MenuDrawer() {
-  const { menuOpen, closeMenu, products, categories, settings } = useShop();
-  const pathname = usePathname();
+  const { menuOpen, menuPath, closeMenu, products, categories, settings } = useShop();
   const sections = selectSections(products, categories);
 
   // Links to a spot on the homepage: scroll there when already on it, otherwise navigate (the browser lands on the anchor).
   function onHomeAnchor(e: React.MouseEvent<HTMLAnchorElement>, hash: string) {
     closeMenu();
-    if (pathname === "/") {
+    if (window.location.pathname === "/") {
       e.preventDefault();
       window.setTimeout(() => scrollToTarget(hash), 380);
     }
@@ -47,7 +45,7 @@ export function MenuDrawer() {
                     <Link
                       href={`/collections/${category.id}`}
                       className={styles.item}
-                      aria-current={pathname === `/collections/${category.id}` ? "page" : undefined}
+                      aria-current={menuPath === `/collections/${category.id}` ? "page" : undefined}
                       onClick={closeMenu}
                     >
                       <span className={styles.itemName}>{category.label}</span>

@@ -9,6 +9,13 @@ import { SectionPage } from "@/components/site/SectionPage";
 /** With Cache Components a dynamic route must list at least one page to prerender; this one never matches a real shelf (404). */
 const NO_SHELVES_YET = "no-shelves-yet";
 
+/**
+ * Shelves that exist at build time are prerendered. A shelf the owner switches on later is rendered
+ * on its first visit, and a shelf that does not exist must answer with a real 404, so this page is
+ * allowed to wait for its params instead of serving a shared loading shell first.
+ */
+export const instant = false;
+
 type Props = { params: Promise<{ slug: string }> };
 
 /** One page per collection that has "Show as its own section" switched on. */

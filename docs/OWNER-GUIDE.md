@@ -40,9 +40,8 @@ The Studio will tell you what is missing (price, photo, alt text) and won't let 
 
 ## Edit a bag, or change a price
 
-Open it, change what you want, press **Publish**. The new price is used everywhere on the website, and the **order
-message is always built from the latest prices**: when a customer presses "Order on WhatsApp" the shop re-checks the
-live prices first.
+Open it, change what you want, press **Publish**. The new price is used everywhere on the website, and an **order
+always uses the latest prices**: when a customer presses Checkout the shop re-checks the live prices first.
 
 ## Feature a bag (the big animated showcase)
 
@@ -68,9 +67,16 @@ Bags are listed in this order, and the first two bags (featured ones first) appe
 
 ## Collections
 
-**Collections → +**: a **Name**, a **URL slug**, an optional image (not shown on the website yet) and a display order.
+**Collections → +**: a **Name**, a **URL slug**, an optional image (not shown on the website yet), a display order
+and **Show as its own section**.
 **Publish collections before the bags that use them.** A collection appears as a filter only when it has at least one
 visible bag.
+
+**Show as its own section** turns a collection (say "iPad cases") into its own *shelf*: on the homepage the bags are
+grouped under a shelf per collection that has this switched on, and customers can open and close each one. Every such
+collection also gets its own page (`/collections/<url-slug>`) and an entry in the menu behind the three-line button.
+Bags in collections that are switched off (or in no collection) are shown together on a last "More bags" shelf.
+A shelf with no visible bags is left out. With the switch off, a collection is only a filter.
 
 ## Shop Settings
 
@@ -78,16 +84,27 @@ Open **Shop Settings** (a single page; there is only ever one). Fill in and **Pu
 
 - **Brand name** and **Logo** (shown in the header; PNG/SVG with a transparent background is best).
 - **Currency**. Changing it does *not* convert prices; update them yourself.
-- **WhatsApp number for orders** in international format: `+` then country code and number, e.g. `+96181616199`.
-  Customers' orders go to this number. If it is empty, customers get the message to copy instead of a WhatsApp button.
-- **Email, location, social links**: shown in the footer; empty ones are hidden.
+- **WhatsApp number** in international format: `+` then country code and number, e.g. `+96181616199`.
+  Shown in the footer and in the "Your bag, your way" block (for custom-bag requests). Orders do **not** use it. Leave it
+  empty to hide it.
+- **Email, location, social links**: shown in the footer (and the email in the "Your bag, your way" block); empty ones
+  are hidden. This is the address *customers* see. Orders arrive on the address set in Vercel (see "Receiving orders").
 - **Homepage headline** (one line per row, the last line is shown in italics), **introduction**, **Craft heading**
   (put `*stars*` around a word to make it italic) and **Craft & story text**. Leave a field empty to use the default wording.
 
+## Receiving orders
+
+There is no online payment: customers **pay cash on delivery**. At checkout they enter their name, phone number, city and
+address (and an optional note) and press **Confirm order**. You receive an **email** with the bags, the total to
+collect and the customer details, and then contact the customer to arrange the delivery. Orders are sent with
+[Resend](https://resend.com). The email address that receives them is *not* in Sanity: it is set by whoever manages the
+website hosting (the `ORDER_EMAIL_TO` setting in Vercel; see README → "Order emails").
+
+If the email cannot be sent, the customer is told so and keeps their bag; nothing is lost silently.
+
 ## What you cannot do here (yet)
 
-Orders, payments and customer accounts are not part of this. Customers send their order to your WhatsApp and you
-confirm it with them there.
+Online payments, customer accounts and an order history are not part of this. Orders only exist as the emails you receive.
 
 ## Try it: a 10-minute walkthrough
 

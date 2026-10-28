@@ -5,7 +5,6 @@ import Image from "next/image";
 import { fromCents } from "@/lib/format";
 import { scrollToTarget } from "@/lib/scroll";
 import type { OrderCustomer } from "@/lib/orders";
-import type { CartLineView } from "@/lib/cart-lines";
 import { CheckoutPanel, emptyCustomer, newOrderId, type PlacedOrder } from "./CheckoutPanel";
 import { ModalDialog } from "./ModalDialog";
 import { QuantityStepper } from "./QuantityStepper";

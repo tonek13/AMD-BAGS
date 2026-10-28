@@ -98,6 +98,7 @@ Vercel → your project → **Settings** → **Environment Variables**. Add (for
 - `SHOP_DATA_SOURCE` = `sanity`
 - `NEXT_PUBLIC_SANITY_PROJECT_ID`, `NEXT_PUBLIC_SANITY_DATASET`, `NEXT_PUBLIC_SANITY_API_VERSION`
 - `SANITY_REVALIDATE_SECRET` (the same random string)
+- Order emails: `RESEND_API_KEY` and `ORDER_EMAIL_TO` (and optionally `ORDER_EMAIL_FROM`); see README → "Order emails"
 
 Then **redeploy**. `NEXT_PUBLIC_…` values are baked in when the site is built, so changing them needs a new build.
 Do **not** add `SANITY_API_WRITE_TOKEN` to Vercel.

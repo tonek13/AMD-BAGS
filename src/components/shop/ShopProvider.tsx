@@ -35,6 +35,7 @@ export function ShopProvider({ settings, products, categories, colors, children 
   const stored = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
   const [cartOpen, setCartOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [menuPath, setMenuPath] = useState("/");
   const [activeProductSlug, setActiveProductSlug] = useState<string | null>(null);
   const [live, setLive] = useState<LiveMap | null>(null);
   const [checkingCart, setCheckingCart] = useState(false);
@@ -127,13 +128,18 @@ export function ShopProvider({ settings, products, categories, colors, children 
       openCart,
       closeCart: () => setCartOpen(false),
       menuOpen,
-      openMenu: () => setMenuOpen(true),
+      menuPath,
+      openMenu: () => {
+        // Read here, when the button is pressed, not with a router hook while rendering (see handleHomeAnchorClick).
+        setMenuPath(window.location.pathname);
+        setMenuOpen(true);
+      },
       closeMenu: () => setMenuOpen(false),
       activeProductSlug,
       openProduct: (slug) => setActiveProductSlug(slug),
       closeProduct: () => setActiveProductSlug(null),
     }),
-    [formatters, settings, products, categories, colors, lines, count, subtotalCents, addToCart, refreshCart, checkingCart, notices, cartOpen, openCart, menuOpen, activeProductSlug],
+    [formatters, settings, products, categories, colors, lines, count, subtotalCents, addToCart, refreshCart, checkingCart, notices, cartOpen, openCart, menuOpen, menuPath, activeProductSlug],
   );
 
   return (

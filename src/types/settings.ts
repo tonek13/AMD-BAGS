@@ -13,7 +13,7 @@ export interface ShopSettings {
   /** ISO 4217 code, e.g. "USD". */
   currency: string;
   locale: string;
-  /** International format. Empty when the owner has not entered one: ordering then shows the copy-message fallback. */
+  /** International format. Empty when the owner has not entered one: the WhatsApp contact is then hidden. Not used for orders (they are emailed). */
   whatsappNumber: string;
   contact: { email: string; location: string };
   socialLinks: SocialLink[];

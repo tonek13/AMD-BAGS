@@ -44,6 +44,8 @@ export interface ShopContextValue extends Formatters {
   closeCart: () => void;
 
   menuOpen: boolean;
+  /** The address of the page the menu was opened on, to mark the current shelf. */
+  menuPath: string;
   openMenu: () => void;
   closeMenu: () => void;
 
