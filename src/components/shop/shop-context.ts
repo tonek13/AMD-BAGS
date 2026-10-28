@@ -43,6 +43,10 @@ export interface ShopContextValue extends Formatters {
   openCart: () => void;
   closeCart: () => void;
 
+  menuOpen: boolean;
+  openMenu: () => void;
+  closeMenu: () => void;
+
   activeProductSlug: string | null;
   openProduct: (slug: string) => void;
   closeProduct: () => void;

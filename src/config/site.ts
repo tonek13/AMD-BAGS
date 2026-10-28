@@ -8,8 +8,9 @@
  *   • fallback wording used when a Shop Settings field is still empty.
  *
  * The WhatsApp number is deliberately NOT defaulted for the connected shop: it must come from
- * Shop Settings, otherwise ordering shows the copy-the-message fallback. `demoWhatsappNumber`
- * is used only in explicit demo mode (SHOP_DATA_SOURCE=demo).
+ * Shop Settings (it is only used for the "customize your bag" contact block and the footer; orders
+ * go to the owner by email, see src/lib/env.ts). `demoWhatsappNumber` is used only in explicit demo
+ * mode (SHOP_DATA_SOURCE=demo).
  */
 export interface SiteConfig {
   brandName: string;
@@ -32,7 +33,7 @@ export const siteConfig: SiteConfig = {
   brandName: "MaisonHook",
   tagline: "Handmade crochet bags",
   description:
-    "Chunky, hand-crocheted bags made slowly in small batches. Browse the collection and order by WhatsApp.",
+    "Chunky, hand-crocheted bags made slowly in small batches. Browse the collection and order online, paying cash on delivery.",
 
   currency: "USD",
   /** Number format locale. Fixed so server and browser always format prices identically. */

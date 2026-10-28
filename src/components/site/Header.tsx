@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { navLinks } from "@/config/site";
 import { gsap } from "@/lib/gsap";
 import { getLenis, handleAnchorClick, prefersReducedMotion } from "@/lib/scroll";
@@ -10,7 +11,9 @@ import { useShop } from "@/components/shop/shop-context";
 import styles from "./Header.module.css";
 
 export function Header() {
-  const { count, openCart, settings } = useShop();
+  const { count, openCart, openMenu, settings } = useShop();
+  const pathname = usePathname();
+  const onHome = pathname === "/";
   const { brandName, logo } = settings;
   const badge = useRef<HTMLSpanElement>(null);
   const previous = useRef(count);
@@ -24,6 +27,7 @@ export function Header() {
   }, [count]);
 
   function toTop(e: React.MouseEvent) {
+    if (!onHome) return; // on any other page the logo is an ordinary link home
     e.preventDefault();
     const lenis = getLenis();
     if (lenis) lenis.scrollTo(0, { duration: 1.4 });
@@ -33,7 +37,13 @@ export function Header() {
   return (
     <header className={styles.header}>
       <div className={styles.bar}>
-        <Link href="/" className={styles.brand} onClick={toTop} aria-label={`${brandName} – back to top`}>
+        <button type="button" className={styles.menu} onClick={openMenu} aria-haspopup="dialog" aria-label="Open menu">
+          <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true">
+            <path d="M4 7h16M4 12h16M4 17h16" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" />
+          </svg>
+        </button>
+
+        <Link href="/" className={styles.brand} onClick={toTop} aria-label={onHome ? `${brandName} – back to top` : `${brandName} – home`}>
           {logo ? (
             <Image
               className={styles.logo}
@@ -54,11 +64,17 @@ export function Header() {
         </Link>
 
         <nav className={styles.nav} aria-label="Primary">
-          {navLinks.map((link) => (
-            <a key={link.href} href={link.href} onClick={handleAnchorClick} className={styles.link}>
-              {link.label}
-            </a>
-          ))}
+          {navLinks.map((link) =>
+            onHome ? (
+              <a key={link.href} href={link.href} onClick={handleAnchorClick} className={styles.link}>
+                {link.label}
+              </a>
+            ) : (
+              <Link key={link.href} href={`/${link.href}`} className={styles.link}>
+                {link.label}
+              </Link>
+            ),
+          )}
         </nav>
 
         <button type="button" className={styles.cart} onClick={openCart} aria-label={`Open bag, ${count} ${count === 1 ? "item" : "items"}`}>

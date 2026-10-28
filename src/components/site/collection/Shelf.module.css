@@ -1,0 +1,136 @@
+.shelf {
+  border-top: 2px dashed color-mix(in srgb, var(--charcoal) 26%, transparent);
+}
+
+.shelf:last-child {
+  border-bottom: 2px dashed color-mix(in srgb, var(--charcoal) 26%, transparent);
+}
+
+.shelf[data-empty] {
+  display: none;
+}
+
+.heading {
+  margin: 0;
+}
+
+.toggle {
+  display: flex;
+  align-items: center;
+  gap: clamp(0.8rem, 2.4vw, 1.8rem);
+  width: 100%;
+  padding: clamp(1.2rem, 3vw, 2rem) 0;
+  border: 0;
+  background: none;
+  text-align: left;
+}
+
+.no {
+  align-self: flex-start;
+  padding-top: 0.5em;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  color: var(--gold-deep);
+}
+
+.titleWrap {
+  display: flex;
+  flex: 1 1 auto;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.35rem 1.1rem;
+  min-width: 0;
+}
+
+.title {
+  font-size: clamp(1.9rem, 4.6vw, 3.6rem);
+  line-height: 1;
+}
+
+.count {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--ink-soft);
+}
+
+.chevron {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border: 1.5px solid currentColor;
+  border-radius: 50%;
+  transition:
+    transform 0.5s var(--ease-out),
+    background-color 0.25s,
+    color 0.25s;
+}
+
+.shelf[data-open="true"] .chevron {
+  transform: rotate(180deg);
+}
+
+.toggle:hover .chevron,
+.toggle:focus-visible .chevron {
+  background: var(--charcoal);
+  color: var(--ivory);
+}
+
+/* The panel opens by animating its grid row from 0fr to 1fr. */
+.panel {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.55s var(--ease-out);
+}
+
+.shelf[data-open="true"] .panel {
+  grid-template-rows: 1fr;
+}
+
+.panelInner {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.panelBody {
+  padding-bottom: clamp(2.2rem, 5vw, 3.4rem);
+}
+
+.allRow {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 1.1rem;
+}
+
+.all {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0;
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--burgundy);
+  text-decoration: underline;
+  text-underline-offset: 5px;
+}
+
+.all svg {
+  transition: transform 0.35s var(--ease-out);
+}
+
+.all:hover svg {
+  transform: translateX(4px);
+}
+
+@media (max-width: 40rem) {
+  .allRow {
+    justify-content: flex-start;
+  }
+
+  .chevron {
+    width: 2.5rem;
+    height: 2.5rem;
+  }
+}

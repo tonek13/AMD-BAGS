@@ -36,7 +36,13 @@ export function resetStory(root: HTMLElement) {
   gsap.set(root, { clearProps: "backgroundColor,color" });
 }
 
-export function buildStoryTimeline(root: HTMLElement, { mobile }: { mobile: boolean }) {
+/**
+ * `spacer` is the wrapper around the pinned section (see YarnStory). Its CSS already reserves the scroll
+ * distance (--story-run × the viewport height) before any JavaScript runs, so nothing below the story
+ * jumps when the pin is created; ScrollTrigger uses the same element as its pin spacer and the same number.
+ */
+export function buildStoryTimeline(root: HTMLElement, { mobile, spacer }: { mobile: boolean; spacer: HTMLElement }) {
+  const run = parseFloat(getComputedStyle(spacer).getPropertyValue("--story-run")) || (mobile ? 2.8 : 4.2);
   const all = <T extends Element>(selector: string) => Array.from(root.querySelectorAll<T>(selector));
   const one = <T extends Element>(selector: string) => {
     const el = root.querySelector<T>(selector);
@@ -73,8 +79,10 @@ export function buildStoryTimeline(root: HTMLElement, { mobile }: { mobile: bool
     scrollTrigger: {
       trigger: root,
       start: "top top",
-      end: `+=${mobile ? 280 : 420}%`,
+      // Pixels from the section's own height (100svh), the same unit the CSS reservation is written in.
+      end: () => `+=${Math.round(root.offsetHeight * run)}`,
       pin: true,
+      pinSpacer: spacer,
       scrub: 0.9,
       anticipatePin: 1,
       // Deliberately NOT invalidateOnRefresh: it re-parses yPercent offsets as pixels on every

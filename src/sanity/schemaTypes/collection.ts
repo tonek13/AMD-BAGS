@@ -1,7 +1,10 @@
 import { TagIcon } from "@sanity/icons/Tag";
 import { defineField, defineType } from "sanity";
 
-/** A group of bags (e.g. "Clutches"). Shown as a filter on the collection section of the website. */
+/**
+ * A group of bags (e.g. "Clutches"). Always offered as a filter on the website; with
+ * "Show as its own section" on, it also gets its own section, its own page and a menu entry.
+ */
 export const collectionType = defineType({
   name: "collection",
   title: "Collection",
@@ -24,10 +27,18 @@ export const collectionType = defineType({
       validation: (rule) => rule.required(),
     }),
     defineField({
+      name: "showAsSection",
+      title: "Show as its own section",
+      type: "boolean",
+      description:
+        "Switch on to give this collection its own section on the homepage (customers can open and close it), its own page, and an entry in the website menu. Collections left off still work as filters.",
+      initialValue: false,
+    }),
+    defineField({
       name: "image",
       title: "Image (optional)",
       type: "image",
-      description: "Not shown on the website yet; kept here for when collection pages are added.",
+      description: "Not shown on the website yet.",
       options: { hotspot: true },
       fields: [
         defineField({
@@ -57,11 +68,11 @@ export const collectionType = defineType({
     },
   ],
   preview: {
-    select: { title: "name", media: "image", order: "displayOrder" },
-    prepare: ({ title, media, order }) => ({
+    select: { title: "name", media: "image", order: "displayOrder", section: "showAsSection" },
+    prepare: ({ title, media, order, section }) => ({
       title,
       media,
-      subtitle: typeof order === "number" ? `Order ${order}` : undefined,
+      subtitle: [section ? "Own section" : undefined, typeof order === "number" ? `Order ${order}` : undefined].filter(Boolean).join(" · ") || undefined,
     }),
   },
 });

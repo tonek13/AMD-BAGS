@@ -1,9 +1,6 @@
 import { NextResponse } from "next/server";
 import { parseCheckRequest, type CartCheckItem } from "@/lib/cart-check";
-import { products as demoProducts } from "@/data/demo-products";
-import { getDataSource } from "@/lib/env";
-import { getSanityClient } from "@/sanity/lib/client";
-import { CART_CHECK_QUERY } from "@/sanity/lib/queries";
+import { lookupLiveProducts } from "@/lib/live-products";
 
 /**
  * Live price and availability for the bags in a customer's cart.
@@ -13,13 +10,6 @@ import { CART_CHECK_QUERY } from "@/sanity/lib/queries";
  * missing from the answer was deleted, unpublished or hidden. Read-only; responses are never cached.
  */
 const NO_STORE = { "Cache-Control": "no-store" };
-
-interface Row {
-  slug: string;
-  name?: string | null;
-  price?: number | null;
-  availability?: string | null;
-}
 
 export async function POST(request: Request) {
   let body: unknown;
@@ -36,24 +26,11 @@ export async function POST(request: Request) {
   if (slugs.length === 0) return NextResponse.json({ items: [] }, { headers: NO_STORE });
 
   try {
-    const rows: Row[] =
-      getDataSource() === "demo"
-        ? demoProducts.map((p) => ({ slug: p.slug, name: p.name, price: p.price, availability: p.availability }))
-        : await getSanityClient().fetch<Row[]>(CART_CHECK_QUERY, { slugs });
-    const bySlug = new Map(rows.map((r) => [r.slug, r]));
-
+    const live = await lookupLiveProducts(slugs);
     const items: CartCheckItem[] = slugs.map((slug) => {
-      const row = bySlug.get(slug);
-      if (!row || !row.name || typeof row.price !== "number" || !Number.isFinite(row.price) || row.price < 0) {
-        return { slug, found: false };
-      }
-      return {
-        slug,
-        found: true,
-        name: row.name,
-        price: row.price,
-        availability: row.availability === "sold-out" ? "sold-out" : "in-stock",
-      };
+      const product = live.get(slug);
+      if (!product) return { slug, found: false };
+      return { slug, found: true, name: product.name, price: product.price, availability: product.availability };
     });
     return NextResponse.json({ items }, { headers: NO_STORE });
   } catch (error) {

@@ -1,0 +1,156 @@
+.customize {
+  position: relative;
+  background: color-mix(in srgb, var(--peach) 52%, var(--ivory));
+  color: var(--charcoal);
+  padding: clamp(3.5rem, 9vh, 6rem) 0;
+}
+
+/* a running stitch along the top and bottom edge, like the craft section */
+.customize::before,
+.customize::after {
+  content: "";
+  position: absolute;
+  inset-inline: var(--gutter);
+  border-top: 2px dashed color-mix(in srgb, var(--burgundy) 45%, transparent);
+}
+
+.customize::before {
+  top: 1rem;
+}
+
+.customize::after {
+  bottom: 1rem;
+}
+
+.inner {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+  gap: 2rem clamp(1.5rem, 5vw, 5rem);
+  align-items: center;
+  max-width: var(--max);
+  margin-inline: auto;
+  padding-inline: var(--gutter);
+}
+
+.say {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.kicker {
+  color: var(--burgundy);
+}
+
+.title {
+  font-size: clamp(2.4rem, 5.4vw, 5rem);
+  max-width: 14ch;
+}
+
+.text {
+  max-width: 34rem;
+  font-size: 1.08rem;
+  color: var(--charcoal-soft);
+}
+
+.channels {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.channel {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    "label arrow"
+    "value arrow";
+  align-items: center;
+  column-gap: 1rem;
+  padding: 1rem 1.2rem;
+  border: 1.5px solid var(--charcoal);
+  border-radius: var(--radius);
+  background: var(--paper);
+  text-decoration: none;
+  transition:
+    background-color 0.25s,
+    color 0.25s,
+    transform 0.35s var(--ease-out);
+}
+
+.channel:hover,
+.channel:focus-visible {
+  background: var(--charcoal);
+  color: var(--ivory);
+  transform: translateY(-2px);
+}
+
+.label {
+  grid-area: label;
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--gold-deep);
+}
+
+.channel:hover .label,
+.channel:focus-visible .label {
+  color: var(--gold-light);
+}
+
+.value {
+  grid-area: value;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-family: var(--font-display);
+  font-size: clamp(1.2rem, 2.2vw, 1.55rem);
+  font-weight: 520;
+  line-height: 1.2;
+}
+
+.arrow {
+  grid-area: arrow;
+  transition: transform 0.35s var(--ease-out);
+}
+
+.channel:hover .arrow {
+  transform: translateX(4px);
+}
+
+/* the short version inside the menu drawer */
+.compact {
+  padding: 1.6rem 1.2rem;
+  border-radius: var(--radius);
+}
+
+.compact::before,
+.compact::after {
+  display: none;
+}
+
+.compact .inner {
+  grid-template-columns: 1fr;
+  gap: 1.1rem;
+  padding-inline: 0;
+}
+
+.compact .title {
+  font-size: 2rem;
+}
+
+.compact .text {
+  font-size: 0.95rem;
+}
+
+.compact .channel {
+  padding: 0.8rem 1rem;
+}
+
+.compact .value {
+  font-size: 1.1rem;
+}
+
+@media (max-width: 52rem) {
+  .inner {
+    grid-template-columns: 1fr;
+  }
+}

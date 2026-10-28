@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { navLinks } from "@/config/site";
 import type { ShopSettings } from "@/types/settings";
 import { normalizeWhatsAppNumber } from "@/lib/whatsapp";
@@ -24,17 +25,15 @@ export function Footer({ settings }: { settings: ShopSettings }) {
           </div>
 
           <ul className={styles.contact}>
-            <li>
-              <span className={styles.label}>WhatsApp</span>
-              {whatsapp ? (
+            {whatsapp && (
+              <li>
+                <span className={styles.label}>WhatsApp</span>
                 <a href={`https://wa.me/${whatsapp}`} target="_blank" rel="noopener noreferrer">
                   {settings.whatsappNumber}
                   <span className="sr-only"> – message us on WhatsApp (opens in a new tab)</span>
                 </a>
-              ) : (
-                <span className={styles.muted}>Ordering opens as soon as the shop number is added.</span>
-              )}
-            </li>
+              </li>
+            )}
             {socialLinks.map((link) => (
               <li key={link.url}>
                 <span className={styles.label}>{link.label}</span>
@@ -60,9 +59,9 @@ export function Footer({ settings }: { settings: ShopSettings }) {
 
           <nav className={styles.nav} aria-label="Footer">
             {navLinks.map((l) => (
-              <a key={l.href} href={l.href}>
+              <Link key={l.href} href={`/${l.href}`}>
                 {l.label}
-              </a>
+              </Link>
             ))}
             <BackToTop />
           </nav>

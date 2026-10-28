@@ -190,6 +190,24 @@
    Motion layout: one pinned 100svh stage, steps stacked on top of
    each other, everything driven by the scroll timeline.
    ══════════════════════════════════════════════════════════════════ */
+
+/*
+ * The scroll distance the pinned story runs for, reserved here in CSS (--story-run × the viewport
+ * height) and used as ScrollTrigger's pin spacer. Without this the space only appears once the
+ * scripts have loaded, and everything below the story (collection, craft…) jumps down by that
+ * amount: after a refresh the page would first show the wrong section, then leap into place.
+ */
+:global(html.motion) .run {
+  --story-run: 4.2;
+  padding-bottom: calc(var(--story-run) * 100svh);
+}
+
+@media (max-width: 52rem) {
+  :global(html.motion) .run {
+    --story-run: 2.8;
+  }
+}
+
 :global(html.motion) .story {
   height: 100svh;
   padding: 0;

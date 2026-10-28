@@ -43,10 +43,13 @@ export interface Product {
   featured?: { order: number; theme: ProductTheme };
 }
 
-/** A collection, as used by the filters. */
+/** A collection, as used by the filters and (when `section` is true) by its own section and page. */
 export interface CategoryOption {
+  /** The collection's slug. Also the last part of its page address: /collections/<id>. */
   id: string;
   label: string;
+  /** The owner switched on "Show as its own section": it gets a section on the homepage, a page and a menu entry. */
+  section: boolean;
 }
 
 export interface ColorOption {

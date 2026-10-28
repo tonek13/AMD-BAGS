@@ -2,6 +2,7 @@ import { getCatalog, getCraftMoments, getShopSettings } from "@/lib/catalog";
 import { selectFeatured, selectHero } from "@/lib/selectors";
 import { Collection } from "@/components/site/Collection";
 import { Craft } from "@/components/site/Craft";
+import { Customize } from "@/components/site/Customize";
 import { FeaturedBags } from "@/components/site/FeaturedBags";
 import { Footer } from "@/components/site/Footer";
 import { Hero } from "@/components/site/Hero";
@@ -22,6 +23,7 @@ export default async function Home() {
         <YarnStory />
         {featured.length > 0 && <FeaturedBags products={featured} />}
         <Collection products={products} />
+        <Customize settings={settings} />
         <Craft moments={craft} />
       </main>
       <Footer settings={settings} />

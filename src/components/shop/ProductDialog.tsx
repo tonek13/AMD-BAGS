@@ -31,7 +31,7 @@ export function ProductDialog() {
 }
 
 function ProductDetails({ product, onClose }: { product: Product; onClose: () => void }) {
-  const { addToCart, openCart, categories, colors, formatPrice, settings } = useShop();
+  const { addToCart, openCart, categories, colors, formatPrice } = useShop();
   const [quantity, setQuantity] = useState(1);
   const [index, setIndex] = useState(0);
 
@@ -161,7 +161,7 @@ function ProductDetails({ product, onClose }: { product: Product; onClose: () =>
                 </button>
               </div>
               <p className={styles.note}>
-                {`Orders are sent to ${settings.brandName} on WhatsApp – no payment on this site.`}
+                Pay cash on delivery. There is no online payment.
               </p>
             </>
           )}

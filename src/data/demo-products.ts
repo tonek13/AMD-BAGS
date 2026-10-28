@@ -11,9 +11,9 @@ import type { CategoryOption, ColorOption, Product } from "@/types/catalog";
  */
 
 export const categories: CategoryOption[] = [
-  { id: "clutch", label: "Clutches" },
-  { id: "top-handle", label: "Top handle" },
-  { id: "tote", label: "Totes & baskets" },
+  { id: "clutch", label: "Clutches", section: true },
+  { id: "top-handle", label: "Top handle", section: true },
+  { id: "tote", label: "Totes & baskets", section: true },
 ];
 
 export const colors: ColorOption[] = [

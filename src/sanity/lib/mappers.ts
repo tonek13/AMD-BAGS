@@ -30,6 +30,7 @@ export interface RawCollection {
   slug: string;
   name?: string | null;
   displayOrder?: number | null;
+  showAsSection?: boolean | null;
 }
 
 export interface RawSettings {
@@ -129,7 +130,7 @@ export function buildCatalog(rawProducts: RawProduct[], rawCollections: RawColle
   const used = new Set(products.map((p) => p.category).filter((c): c is string => !!c));
   const categories: CategoryOption[] = rawCollections
     .filter((c) => used.has(text(c.slug)) && text(c.name))
-    .map((c) => ({ id: text(c.slug), label: text(c.name) }));
+    .map((c) => ({ id: text(c.slug), label: text(c.name), section: c.showAsSection === true }));
 
   // Colour options: one per distinct colour name, in order of first appearance.
   const colorMap = new Map<string, ColorOption>();

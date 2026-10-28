@@ -201,11 +201,38 @@
 
 @media (max-width: 52rem) {
   .layout {
-    grid-template-columns: 1fr;
-    grid-template-rows: minmax(0, 46dvh) minmax(0, 1fr);
+    /* minmax(0, …): a plain 1fr would let a wide child (many thumbnails) stretch the sheet past the screen */
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 38%) minmax(0, 1fr);
+  }
+
+  .thumbs {
+    overflow-x: auto;
+    padding: 0.6rem 1rem 0.7rem;
+  }
+
+  .thumb {
+    flex: none;
+    width: 3.5rem;
   }
 
   .info {
-    padding-bottom: 2rem;
+    --pad: 1.3rem;
+    padding: 1.1rem var(--pad) 0;
+  }
+
+  .name {
+    font-size: clamp(2rem, 9vw, 2.6rem);
+  }
+
+  /* The add-to-bag controls stay in view at the bottom of the sheet while the details scroll. */
+  .buy {
+    position: sticky;
+    bottom: 0;
+    z-index: 1;
+    margin-inline: calc(-1 * var(--pad));
+    padding: 0.9rem var(--pad) calc(0.9rem + env(safe-area-inset-bottom));
+    border-top: 1px solid var(--line);
+    background: var(--paper);
   }
 }

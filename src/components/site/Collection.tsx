@@ -1,14 +1,15 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import Image from "next/image";
 import type { ColorOption, Product } from "@/types/catalog";
 import { Flip, gsap, registerGsap, ScrollTrigger } from "@/lib/gsap";
 import { useIsomorphicLayoutEffect } from "@/lib/hooks";
 import { prefersReducedMotion } from "@/lib/scroll";
-import { AvailabilityBadge } from "@/components/shop/AvailabilityBadge";
 import { useShop } from "@/components/shop/shop-context";
+import { selectSections, selectUnsectioned } from "@/lib/selectors";
 import { FilterPanel } from "./collection/FilterPanel";
+import { ProductGrid } from "./collection/ProductGrid";
+import { Shelf } from "./collection/Shelf";
 import { Swatch } from "./collection/Swatch";
 import {
   activeFilterCount,
@@ -32,22 +33,33 @@ interface Chip {
 }
 
 export function Collection({ products }: { products: Product[] }) {
-  const { categories, colors, openProduct, addToCart, openCart, formatPrice, settings } = useShop();
+  const { categories, colors, settings } = useShop();
   const [filters, setFilters] = useState<FilterState>(emptyFilters);
   const [sort, setSort] = useState<SortKey>("featured");
   const [density, setDensity] = useState<Density>("standard");
   const [panelOpen, setPanelOpen] = useState(false);
 
-  const grid = useRef<HTMLUListElement>(null);
+  const shelves = useRef<HTMLDivElement>(null);
   const flipState = useRef<ReturnType<typeof Flip.getState> | null>(null);
 
   const sorted = useMemo(() => sortProducts(products, sort), [products, sort]);
+  // Collections with "Show as its own section" get a shelf each; every other bag goes on a final "More bags" shelf.
+  const sections = useMemo(() => selectSections(sorted, categories), [sorted, categories]);
+  const unsectioned = useMemo(() => selectUnsectioned(sorted, sections), [sorted, sections]);
+  const shelfList = useMemo(
+    () => [
+      ...sections.map((s) => ({ id: s.category.id, title: s.category.label, href: `/collections/${s.category.id}`, products: s.products })),
+      ...(sections.length > 0 && unsectioned.length > 0 ? [{ id: "more-bags", title: "More bags", href: undefined, products: unsectioned }] : []),
+    ],
+    [sections, unsectioned],
+  );
+  const isHidden = (p: Product) => !matchesFilters(p, filters);
   const visibleCount = products.filter((p) => matchesFilters(p, filters)).length;
   const active = activeFilterCount(filters);
 
   // Remember where every card is before anything changes, then FLIP them to their new places.
   function change(apply: () => void) {
-    const cards = grid.current?.querySelectorAll("[data-card]");
+    const cards = shelves.current?.querySelectorAll("[data-card]");
     if (cards && !prefersReducedMotion()) {
       registerGsap();
       Flip.killFlipsOf(cards);
@@ -82,11 +94,11 @@ export function Collection({ products }: { products: Product[] }) {
   // Entrance: cards rise in as the grid scrolls into view.
   useEffect(() => {
     registerGsap();
-    const gridEl = grid.current;
-    if (!gridEl) return;
+    const shelvesEl = shelves.current;
+    if (!shelvesEl) return;
     const mm = gsap.matchMedia();
     mm.add("(prefers-reduced-motion: no-preference)", () => {
-      const cards = gsap.utils.toArray<HTMLElement>("[data-card]", gridEl);
+      const cards = gsap.utils.toArray<HTMLElement>("[data-card]", shelvesEl);
       // opacity only (never visibility): cards must stay focusable so keyboard users can Tab to them
       gsap.set(cards, { opacity: 0, y: 70, rotate: 2.5 });
       ScrollTrigger.batch(cards, {
@@ -238,26 +250,20 @@ export function Collection({ products }: { products: Product[] }) {
           )}
         </div>
 
-        <ul ref={grid} className={styles.grid} data-density={density}>
-          {sorted.map((p) => (
-            <ProductCard
-              key={p.slug}
-              product={p}
-              hidden={!matchesFilters(p, filters)}
-              categoryLabel={categories.find((c) => c.id === p.category)?.label ?? ""}
-              colorLabel={p.colors
-                .map((id) => colors.find((c) => c.id === id)?.label)
-                .filter(Boolean)
-                .join(", ")}
-              formatPrice={formatPrice}
-              onOpen={() => openProduct(p.slug)}
-              onAdd={() => {
-                addToCart(p.slug, 1);
-                openCart();
-              }}
-            />
-          ))}
-        </ul>
+        <div ref={shelves}>
+          {shelfList.length > 0 ? (
+            shelfList.map((shelf, i) => {
+              const shown = shelf.products.filter((p) => !isHidden(p)).length;
+              return (
+                <Shelf key={shelf.id} id={`shelf-${shelf.id}`} index={i + 1} title={shelf.title} count={shown} href={shelf.href} empty={shown === 0}>
+                  <ProductGrid products={shelf.products} density={density} isHidden={isHidden} />
+                </Shelf>
+              );
+            })
+          ) : (
+            <ProductGrid products={sorted} density={density} isHidden={isHidden} />
+          )}
+        </div>
 
         {visibleCount === 0 && (
           <div className={styles.empty}>
@@ -282,69 +288,5 @@ export function Collection({ products }: { products: Product[] }) {
         onClear={clearFilters}
       />
     </section>
-  );
-}
-
-interface ProductCardProps {
-  product: Product;
-  hidden: boolean;
-  categoryLabel: string;
-  colorLabel: string;
-  formatPrice: (amount: number) => string;
-  onOpen: () => void;
-  onAdd: () => void;
-}
-
-function ProductCard({ product, hidden, categoryLabel, colorLabel, formatPrice, onOpen, onAdd }: ProductCardProps) {
-  const [cover, alt] = product.images;
-  const soldOut = product.availability === "sold-out";
-  const focus = (img: typeof cover) => `${img.focal?.x ?? 50}% ${img.focal?.y ?? 50}%`;
-
-  return (
-    <li className={styles.item} data-card data-hidden={hidden || undefined}>
-      <article className={`${styles.card} ${soldOut ? styles.soldOut : ""}`}>
-        <button
-          type="button"
-          className={styles.media}
-          onClick={onOpen}
-          aria-label={`${product.name}, ${formatPrice(product.price)}${soldOut ? ", sold out" : ""} – view details`}
-        >
-          <Image
-            className={styles.photo}
-            src={cover.src}
-            alt=""
-            fill
-            sizes="(max-width: 52rem) 50vw, (max-width: 80rem) 33vw, 28vw"
-            style={{ objectFit: "cover", objectPosition: focus(cover) }}
-          />
-          {alt && (
-            <Image
-              className={styles.photoAlt}
-              src={alt.src}
-              alt=""
-              fill
-              sizes="(max-width: 52rem) 50vw, (max-width: 80rem) 33vw, 28vw"
-              style={{ objectFit: "cover", objectPosition: focus(alt) }}
-            />
-          )}
-          <AvailabilityBadge availability={product.availability} className={styles.badge} />
-          <span className={styles.quickLook} aria-hidden="true">
-            Quick look
-          </span>
-        </button>
-
-        <div className={styles.meta}>
-          <div className={styles.titleRow}>
-            <h3 className={styles.name}>{product.name}</h3>
-            <p className={styles.price}>{formatPrice(product.price)}</p>
-          </div>
-          <p className={styles.sub}>{[colorLabel, categoryLabel].filter(Boolean).join(" · ")}</p>
-          <button type="button" className={styles.add} disabled={soldOut} onClick={onAdd}>
-            {soldOut ? "Sold out" : "Add to bag"}
-            <span className="sr-only"> – {product.name}</span>
-          </button>
-        </div>
-      </article>
-    </li>
   );
 }

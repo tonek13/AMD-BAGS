@@ -20,11 +20,13 @@ import styles from "./YarnStory.module.css";
  */
 export function YarnStory() {
   const root = useRef<HTMLElement>(null);
+  const run = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     registerGsap();
     const el = root.current;
-    if (!el) return;
+    const spacer = run.current;
+    if (!el || !spacer) return;
 
     const mm = gsap.matchMedia();
     let build = 0;
@@ -40,7 +42,7 @@ export function YarnStory() {
           // Start every build from the authored (finished) state. ignore(): the reset must not be
           // recorded by the context, or reverting the context would undo it and resurrect old state.
           context.ignore(() => resetStory(el));
-          buildStoryTimeline(el, { mobile: !desktop });
+          buildStoryTimeline(el, { mobile: !desktop, spacer });
           // When the animation stops matching (e.g. reduced motion switched on) nothing rebuilds,
           // so clear whatever the timeline left behind, unless a newer build has already started.
           return () => {
@@ -65,6 +67,7 @@ export function YarnStory() {
   }, []);
 
   return (
+    <div ref={run} className={styles.run}>
     <section ref={root} id="story" className={styles.story} aria-labelledby="story-title" data-prehide>
       <div className={styles.stage} data-s="stage">
         <header className={styles.top}>
@@ -138,5 +141,6 @@ export function YarnStory() {
         </a>
       </div>
     </section>
+    </div>
   );
 }

@@ -18,6 +18,7 @@ import {
 } from "@/lib/cart-store";
 import { ShopContext, type CartRefreshResult, type ShopContextValue } from "./shop-context";
 import { CartDrawer } from "./CartDrawer";
+import { MenuDrawer } from "./MenuDrawer";
 import { ProductDialog } from "./ProductDialog";
 
 interface ShopProviderProps {
@@ -33,6 +34,7 @@ const CHECK_TIMEOUT_MS = 8000;
 export function ShopProvider({ settings, products, categories, colors, children }: ShopProviderProps) {
   const stored = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
   const [cartOpen, setCartOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const [activeProductSlug, setActiveProductSlug] = useState<string | null>(null);
   const [live, setLive] = useState<LiveMap | null>(null);
   const [checkingCart, setCheckingCart] = useState(false);
@@ -124,11 +126,14 @@ export function ShopProvider({ settings, products, categories, colors, children 
       cartOpen,
       openCart,
       closeCart: () => setCartOpen(false),
+      menuOpen,
+      openMenu: () => setMenuOpen(true),
+      closeMenu: () => setMenuOpen(false),
       activeProductSlug,
       openProduct: (slug) => setActiveProductSlug(slug),
       closeProduct: () => setActiveProductSlug(null),
     }),
-    [formatters, settings, products, categories, colors, lines, count, subtotalCents, addToCart, refreshCart, checkingCart, notices, cartOpen, openCart, activeProductSlug],
+    [formatters, settings, products, categories, colors, lines, count, subtotalCents, addToCart, refreshCart, checkingCart, notices, cartOpen, openCart, menuOpen, activeProductSlug],
   );
 
   return (
@@ -136,6 +141,7 @@ export function ShopProvider({ settings, products, categories, colors, children 
       {children}
       <ProductDialog />
       <CartDrawer />
+      <MenuDrawer />
     </ShopContext.Provider>
   );
 }

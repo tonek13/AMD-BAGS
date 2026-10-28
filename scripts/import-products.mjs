@@ -78,8 +78,10 @@ function colorValue(hex) {
   };
 }
 
+/** Ids of every document (draft or published) of this type with this slug. */
 async function existingBySlug(type, slug) {
-  return client.fetch(`*[_type == $type && slug.current == $slug][0]{_id}`, { type, slug });
+  const rows = await client.fetch(`*[_type == $type && slug.current == $slug]{_id}`, { type, slug });
+  return rows.map((r) => r._id);
 }
 
 const uploaded = new Map();
@@ -103,19 +105,31 @@ console.log(`${APPLY ? "IMPORTING" : "DRY RUN (nothing will be written)"} into p
 if (!APPLY && !token) console.log("(No write token set: the dry run only reads.)\n");
 
 const summary = { created: [], skipped: [] };
-/** Collection slug → the (published) document id products should reference. */
-const collectionIds = new Map();
+/** Collection slug → how products should reference it. */
+const collectionRefs = new Map();
+
+/**
+ * A collection that exists only as a draft cannot be referenced strongly (Sanity refuses it), so products
+ * point at it with a reference that is weak until published: the same kind the Studio itself creates. When the
+ * owner publishes the collection and then the product, the Studio turns it into a normal reference.
+ */
+function collectionReference(slug) {
+  const ref = collectionRefs.get(slug) ?? { id: `import-collection-${slug}`, published: false };
+  return ref.published
+    ? { _type: "reference", _ref: ref.id }
+    : { _type: "reference", _ref: ref.id, _weak: true, _strengthenOnPublish: { type: "collection" } };
+}
 
 console.log("Collections");
 for (const c of seed.collections) {
   const found = await existingBySlug("collection", c.slug);
-  if (found) {
-    collectionIds.set(c.slug, found._id.replace(/^drafts./, ""));
-    summary.skipped.push(`collection "${c.name}" already exists (${found._id})`);
+  if (found.length > 0) {
+    collectionRefs.set(c.slug, { id: found[0].replace(/^drafts./, ""), published: found.some((id) => !id.startsWith("drafts.")) });
+    summary.skipped.push(`collection "${c.name}" already exists (${found.join(", ")})`);
     console.log(`  skip  ${c.name}: already in Sanity`);
     continue;
   }
-  collectionIds.set(c.slug, `import-collection-${c.slug}`);
+  collectionRefs.set(c.slug, { id: `import-collection-${c.slug}`, published: false });
   await createDraft({
     _id: `drafts.import-collection-${c.slug}`,
     _type: "collection",
@@ -130,8 +144,8 @@ for (const c of seed.collections) {
 console.log("\nProducts");
 for (const p of seed.products) {
   const found = await existingBySlug("product", p.slug);
-  if (found) {
-    summary.skipped.push(`product "${p.name}" already exists (${found._id})`);
+  if (found.length > 0) {
+    summary.skipped.push(`product "${p.name}" already exists (${found.join(", ")})`);
     console.log(`  skip  ${p.name}: already in Sanity`);
     continue;
   }
@@ -160,7 +174,7 @@ for (const p of seed.products) {
     hidden: false,
     featured: p.featured,
     displayOrder: p.displayOrder,
-    collection: { _type: "reference", _ref: collectionIds.get(p.collection) ?? `import-collection-${p.collection}` },
+    collection: collectionReference(p.collection),
     colors: p.colors.map((c, i) => ({
       _type: "colorOption",
       _key: key("color", p.slug, i),

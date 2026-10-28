@@ -173,46 +173,6 @@
   line-height: 1.45;
 }
 
-.previewBlock {
-  display: grid;
-  gap: 0.7rem;
-}
-
-.previewLabel {
-  font-size: 0.78rem;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-}
-
-.previewText {
-  width: 100%;
-  resize: none;
-  padding: 0.8rem;
-  border: 1.5px solid var(--charcoal);
-  border-radius: var(--radius);
-  background: var(--paper);
-  font-size: 0.88rem;
-  line-height: 1.5;
-}
-
-.preview summary {
-  cursor: pointer;
-  font-size: 0.88rem;
-  font-weight: 600;
-}
-
-.preview pre {
-  margin: 0.6rem 0 0;
-  padding: 0.8rem;
-  white-space: pre-wrap;
-  background: var(--paper);
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  font: inherit;
-  font-size: 0.86rem;
-}
-
 .status {
   min-height: 1.3em;
   font-size: 0.86rem;
@@ -278,4 +238,181 @@
 .error {
   color: var(--burgundy);
   font-weight: 600;
+}
+
+/* ─── checkout ─── */
+.back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 2.75rem;
+  padding: 0 0.6rem 0 0;
+  border: 0;
+  background: none;
+  font-size: 0.92rem;
+  font-weight: 650;
+}
+
+.back:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.checkoutScroll {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 1rem 1.4rem 1.4rem;
+}
+
+.summary {
+  display: grid;
+  gap: 0.35rem;
+  margin-bottom: 1.4rem;
+  padding: 0.9rem 1rem;
+  border: 1px dashed var(--line);
+  border-radius: var(--radius);
+  background: var(--ivory);
+  font-size: 0.92rem;
+}
+
+.summary li {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.summary li span:last-child {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.form {
+  display: grid;
+  gap: 1.05rem;
+}
+
+.formTitle {
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  font-weight: 560;
+}
+
+.field {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.field label {
+  font-size: 0.84rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.field input,
+.field textarea {
+  width: 100%;
+  min-height: 3rem;
+  padding: 0.7rem 0.85rem;
+  border: 1.5px solid color-mix(in srgb, var(--charcoal) 55%, transparent);
+  border-radius: var(--radius);
+  background: var(--paper);
+  /* 16px or more stops phones from zooming the page when a field is focused */
+  font-size: 1rem;
+  line-height: 1.4;
+}
+
+.field textarea {
+  resize: vertical;
+}
+
+.field input:focus-visible,
+.field textarea:focus-visible {
+  outline-offset: 1px;
+  border-color: var(--burgundy);
+}
+
+.invalid input,
+.invalid textarea {
+  border-color: var(--burgundy);
+  background: rgb(107 22 49 / 0.05);
+}
+
+.fieldHint,
+.fieldError {
+  font-size: 0.84rem;
+  line-height: 1.4;
+}
+
+.fieldHint {
+  color: var(--ink-soft);
+}
+
+.fieldError {
+  color: var(--burgundy);
+  font-weight: 650;
+}
+
+.hp {
+  position: absolute;
+  left: -10000px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+.payment {
+  display: flex;
+  gap: 0.8rem;
+  align-items: flex-start;
+  padding: 0.9rem 1rem;
+  border: 1.5px solid var(--charcoal);
+  border-radius: var(--radius);
+  background: var(--ivory);
+}
+
+.paymentDot {
+  flex: none;
+  width: 1.1rem;
+  height: 1.1rem;
+  margin-top: 0.2rem;
+  border: 2px solid var(--charcoal);
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--burgundy) 0 45%, transparent 50%);
+}
+
+.paymentTitle {
+  font-weight: 700;
+}
+
+.paymentText {
+  font-size: 0.88rem;
+  color: var(--ink-soft);
+  line-height: 1.4;
+}
+
+/* ─── order placed ─── */
+.done {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.9rem;
+  padding: 2rem 1.6rem;
+  text-align: center;
+}
+
+.doneArt {
+  color: var(--burgundy);
+}
+
+.doneText {
+  max-width: 28ch;
+  color: var(--ink-soft);
+  overflow-wrap: anywhere;
+}
+
+.doneText strong {
+  color: var(--charcoal);
 }

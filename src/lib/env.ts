@@ -60,6 +60,40 @@ export function requireSanityEnv(): ServerSanityEnv {
   };
 }
 
+export interface OrderEmailEnv {
+  apiKey: string;
+  /** The shop owner's address(es): every order is emailed here. */
+  to: string[];
+  from: string;
+}
+
+const EMAIL_ADDRESS = /^[^\s@<>,;]+@[^\s@<>,;]+\.[^\s@<>,;]+$/;
+
+/**
+ * Settings for emailing orders through Resend (https://resend.com):
+ *   RESEND_API_KEY      API key from the Resend dashboard (server only).
+ *   ORDER_EMAIL_TO      the owner's email; several can be separated by commas.
+ *   ORDER_EMAIL_FROM    optional sender, e.g. "MaisonHook <orders@yourdomain.com>". Without it Resend's
+ *                       test sender is used, which can only deliver to the email of the Resend account itself.
+ */
+export function getOrderEmailEnv(brandName: string): { ok: true; value: OrderEmailEnv } | { ok: false; problems: string[] } {
+  const problems: string[] = [];
+  const apiKey = process.env.RESEND_API_KEY?.trim() ?? "";
+  if (!apiKey) problems.push("RESEND_API_KEY is not set.");
+
+  const to = (process.env.ORDER_EMAIL_TO ?? "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  if (to.length === 0) problems.push("ORDER_EMAIL_TO is not set (the shop owner's email).");
+  else if (to.some((address) => !EMAIL_ADDRESS.test(address))) problems.push("ORDER_EMAIL_TO contains something that is not an email address.");
+
+  const from = process.env.ORDER_EMAIL_FROM?.trim() || `${brandName} orders <onboarding@resend.dev>`;
+
+  if (problems.length > 0) return { ok: false, problems };
+  return { ok: true, value: { apiKey, to, from } };
+}
+
 /** The webhook secret, or null when it has not been configured (the webhook then refuses everything). */
 export function getRevalidateSecret(): string | null {
   const secret = process.env.SANITY_REVALIDATE_SECRET?.trim();

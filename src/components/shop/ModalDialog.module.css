@@ -55,7 +55,7 @@
   box-shadow: 1.5rem 0 4rem rgb(35 31 32 / 0.25);
 }
 
-/* Product details: a centred sheet on desktop, full-screen on phones */
+/* Product details: a centred sheet on desktop, a bottom sheet on phones */
 .modal {
   position: fixed;
   inset: 0;
@@ -67,11 +67,18 @@
   box-shadow: 0 2rem 5rem rgb(35 31 32 / 0.35);
 }
 
+/*
+ * On a phone the sheet is anchored to the bottom and stops short of the top edge, so it always sits
+ * inside the screen (never edge to edge, never taller than the visible area) and the page behind
+ * stays in view above it. 100% rather than 100vw: vw ignores browser scrollbars and can overshoot.
+ */
 @media (max-width: 52rem) {
   .modal {
-    width: 100vw;
-    height: 100dvh;
-    border-radius: 0;
+    inset: auto 0 0 0;
+    margin: 0;
+    width: 100%;
+    height: calc(100dvh - max(1rem, env(safe-area-inset-top)));
+    border-radius: 1.1rem 1.1rem 0 0;
     transform: translateY(2.5rem);
   }
 }

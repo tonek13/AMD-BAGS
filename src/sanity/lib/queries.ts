@@ -30,7 +30,8 @@ export const COLLECTIONS_QUERY = defineQuery(`
   _id,
   "slug": slug.current,
   name,
-  displayOrder
+  displayOrder,
+  "showAsSection": showAsSection == true
 }`);
 
 /** The Shop Settings singleton (its document id is fixed). */

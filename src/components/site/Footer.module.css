@@ -64,10 +64,6 @@
   text-underline-offset: 5px;
 }
 
-.muted {
-  max-width: 22rem;
-  opacity: 0.8;
-}
 
 .nav {
   display: grid;

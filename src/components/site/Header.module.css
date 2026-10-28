@@ -19,6 +19,24 @@
   padding-inline: var(--gutter);
 }
 
+.menu {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 2.75rem;
+  height: 2.75rem;
+  margin-left: -0.6rem;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--charcoal);
+  transition: background-color 0.2s;
+}
+
+.menu:hover {
+  background: rgb(35 31 32 / 0.08);
+}
+
 .brand {
   display: inline-flex;
   align-items: center;
@@ -110,6 +128,13 @@
   color: var(--ivory);
 }
 
+/* On phones the menu button carries the page links. */
+@media (max-width: 40rem) {
+  .nav {
+    display: none;
+  }
+}
+
 @media (max-width: 32rem) {
   .name {
     font-size: 1.3rem;
@@ -119,16 +144,8 @@
     display: none;
   }
 
-  .nav {
-    gap: 0.9rem;
-  }
-
-  .link {
-    font-size: 0.88rem;
-  }
-
   .bar {
-    gap: 0.6rem;
+    gap: 0.4rem;
   }
 
   .mark {
@@ -138,19 +155,10 @@
 
 @media (max-width: 24rem) {
   .bar {
-    gap: 0.4rem;
     padding-inline: 0.8rem;
   }
 
   .name {
     font-size: 1.12rem;
-  }
-
-  .nav {
-    gap: 0.65rem;
-  }
-
-  .link {
-    font-size: 0.82rem;
   }
 }
