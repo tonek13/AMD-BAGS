@@ -13,8 +13,8 @@ import { apiVersion, dataset, projectId } from "@/sanity/env";
 import { schemaTypes } from "@/sanity/schemaTypes";
 import { structure } from "@/sanity/structure";
 
-/** Shop Settings is a single document: hide the actions that would create a second copy or remove it. */
-const SINGLETONS = new Set(["shopSettings"]);
+/** Shop Settings, Sale and Offers are single documents: hide the actions that would create a second copy or remove them. */
+const SINGLETONS = new Set(["shopSettings", "saleSection", "offersSection"]);
 const BLOCKED_SINGLETON_ACTIONS = new Set(["delete", "duplicate", "unpublish"]);
 
 export default defineConfig({

@@ -78,6 +78,33 @@ collection also gets its own page (`/collections/<url-slug>`) and an entry in th
 Bags in collections that are switched off (or in no collection) are shown together on a last "More bags" shelf.
 A shelf with no visible bags is left out. With the switch off, a collection is only a filter.
 
+## Sale
+
+**Sale** (left menu) is one page. Tick **Show the sale on the website**, then add each bag with its **Previous price**
+and **New price** and press **Publish**.
+
+While it is on, the bags appear on a **Sale** shelf on the homepage (open/close like the others), on their own page
+(`/sale`) and in the menu. The old price is shown struck through next to the new one, and **customers are charged the new
+price**. Untick it and publish: the shelf disappears and every bag goes back to its normal price. The bags' own prices
+are never changed, so ending a sale needs nothing else.
+
+## Offers
+
+**Offers** (left menu) works the same way. Tick **Show the offers on the website**, then add an offer:
+
+- the **bags** it covers (pick as many as you like),
+- **Customer buys** (e.g. 2) and **…and gets free** (e.g. 1).
+
+Example: three pouches, buy 2, get 1 free. Whenever a customer's bag holds three of those pouches, the cheapest one is
+free (six pouches: the two cheapest are free). The discount is shown in the bag and at checkout and is part of the
+total. Offers get their own **Offers** shelf, page (`/offers`) and menu entry while they are switched on. A bag should be
+in one offer only; if it is in several, the first one wins. The offer is applied automatically: customers do not need a code.
+
+## Delivery fee
+
+**Shop Settings → Ordering → Delivery fee**: one amount, in the shop currency, added to every order. Customers see it in
+their bag and in the checkout total, and it is in the order email you receive. Leave it empty or 0 for free delivery.
+
 ## Shop Settings
 
 Open **Shop Settings** (a single page; there is only ever one). Fill in and **Publish**:
@@ -94,7 +121,7 @@ Open **Shop Settings** (a single page; there is only ever one). Fill in and **Pu
 
 ## Receiving orders
 
-There is no online payment: customers **pay cash on delivery**. At checkout they enter their name, phone number, city and
+There is no online payment: customers **pay cash on delivery** (the total includes your delivery fee and any offers). At checkout they enter their name, phone number, city and
 address (and an optional note) and press **Confirm order**. You receive an **email** with the bags, the total to
 collect and the customer details, and then contact the customer to arrange the delivery. Orders are sent with
 [Resend](https://resend.com). The email address that receives them is *not* in Sanity: it is set by whoever manages the

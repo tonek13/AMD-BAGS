@@ -47,7 +47,7 @@ export const viewport: Viewport = {
 const motionBootScript = `(function(d){try{if(!window.matchMedia("(prefers-reduced-motion: reduce)").matches){d.classList.add("motion");setTimeout(function(){if(!d.classList.contains("motion-ready"))d.classList.remove("motion")},6000)}}catch(e){}})(document.documentElement)`;
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const [{ products, categories, colors }, settings] = await Promise.all([getCatalog(), getShopSettings()]);
+  const [{ products, categories, colors, sale, offers }, settings] = await Promise.all([getCatalog(), getShopSettings()]);
 
   return (
     <html lang="en" className={`${fraunces.variable} ${hanken.variable}`} suppressHydrationWarning>
@@ -59,7 +59,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           Skip to content
         </a>
         <MotionRoot>
-          <ShopProvider settings={settings} products={products} categories={categories} colors={colors}>
+          <ShopProvider settings={settings} products={products} categories={categories} colors={colors} sale={sale} offersSection={offers}>
             <Header />
             {children}
           </ShopProvider>

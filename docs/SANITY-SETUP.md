@@ -113,7 +113,7 @@ Sanity → <https://www.sanity.io/manage> → your project → **API** → **Web
 | URL | `https://<your-production-domain>/api/revalidate` |
 | Dataset | `production` (if the form asks for one) |
 | Trigger on | **Create**, **Update**, **Delete** (all three ticked) |
-| Filter | `_type in ["product", "collection", "shopSettings"]` |
+| Filter | `_type in ["product", "collection", "shopSettings", "saleSection", "offersSection"]` |
 | Projection | `{_type, _id}` |
 | Status | Enabled |
 | HTTP method | `POST` |

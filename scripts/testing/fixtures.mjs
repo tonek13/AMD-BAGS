@@ -106,6 +106,55 @@ export const products = [
   },
 ];
 
+// Bags for the Sale and Offers tests (kept apart from the bags above so their prices stay untouched).
+const extraBag = (id, name, slugText, price, order) => ({
+  _id: id,
+  _type: "product",
+  name,
+  slug: slug(slugText),
+  description: `${name}. A small handmade piece.`,
+  price,
+  availability: "available",
+  displayOrder: order,
+  colors: [{ _type: "colorOption", _key: "a", name: "Peach", swatch: swatch("#f0b98d") }],
+  images: [image("image-peach-960x1280-jpg", `${name} photo`)],
+});
+products.push(
+  extraBag("p-sunset", "Sunset Tote", "sunset-tote", 100, 10),
+  extraBag("p-peach-pouch", "Peach Pouch", "peach-pouch", 30, 11),
+  extraBag("p-plum-pouch", "Plum Pouch", "plum-pouch", 40, 12),
+  extraBag("p-mint-pouch", "Mint Pouch", "mint-pouch", 50, 13),
+);
+
+/** The Sale and Offers documents: Sunset Tote 100 → 70, and "buy 2, get 1 free" on the three pouches. */
+export const promos = [
+  {
+    _id: "saleSection",
+    _type: "saleSection",
+    show: true,
+    items: [{ _type: "saleItem", _key: "s1", product: ref("p-sunset"), previousPrice: 100, newPrice: 70 }],
+  },
+  {
+    _id: "offersSection",
+    _type: "offersSection",
+    show: true,
+    offers: [
+      {
+        _type: "offer",
+        _key: "pouches",
+        title: "Pouch trio",
+        buy: 2,
+        free: 1,
+        products: [
+          { _type: "reference", _key: "r1", _ref: "p-peach-pouch" },
+          { _type: "reference", _key: "r2", _ref: "p-plum-pouch" },
+          { _type: "reference", _key: "r3", _ref: "p-mint-pouch" },
+        ],
+      },
+    ],
+  },
+];
+
 export const settings = [
   {
     _id: "shopSettings",
@@ -124,4 +173,4 @@ export const settings = [
   { _id: "drafts.shopSettings", _type: "shopSettings", brandName: "Draft Name", currency: "GBP", whatsappNumber: "+11111111111" },
 ];
 
-export const dataset = () => [...collections, ...products, ...settings];
+export const dataset = () => [...collections, ...products, ...promos, ...settings];

@@ -1,17 +1,23 @@
 import Link from "next/link";
-import type { ShopSection } from "@/lib/selectors";
-import { ProductGrid } from "./collection/ProductGrid";
+import type { Shelf, ShelfGroup } from "@/lib/selectors";
+import { ShelfGroupView } from "./collection/ShelfGroupView";
 import styles from "./SectionPage.module.css";
 
 interface SectionPageProps {
-  section: ShopSection;
+  kicker: string;
+  title: string;
+  /** One line under the title. */
+  blurb: string;
+  groups: ShelfGroup[];
   /** The other shelves, offered as links at the end of the page. */
-  others: ShopSection[];
+  others: Shelf[];
+  /** Shown instead of the bags when there are none (e.g. a sale that is not on). */
+  emptyText?: string;
 }
 
-/** One collection on its own page: its name, its bags, and a way to the other shelves. */
-export function SectionPage({ section, others }: SectionPageProps) {
-  const { category, products } = section;
+/** One shelf on its own page: its name, its bags, and a way to the other shelves. */
+export function SectionPage({ kicker, title, blurb, groups, others, emptyText }: SectionPageProps) {
+  const empty = groups.every((g) => g.products.length === 0);
 
   return (
     <main id="main" className={styles.page}>
@@ -23,14 +29,14 @@ export function SectionPage({ section, others }: SectionPageProps) {
             </svg>
             All bags
           </Link>
-          <p className={`eyebrow ${styles.kicker}`}>The shelf</p>
-          <h1 className={`display ${styles.title}`}>{category.label}</h1>
-          <p className={styles.count}>
-            {products.length} {products.length === 1 ? "bag" : "bags"}, each one hooked by hand.
-          </p>
+          <p className={`eyebrow ${styles.kicker}`}>{kicker}</p>
+          <h1 className={`display ${styles.title}`}>{title}</h1>
+          <p className={styles.count}>{empty ? emptyText : blurb}</p>
         </header>
 
-        <ProductGrid products={products} />
+        {groups.map((g) => (
+          <ShelfGroupView key={g.id} group={g} />
+        ))}
 
         {others.length > 0 && (
           <nav className={styles.others} aria-labelledby="other-shelves">
@@ -39,9 +45,9 @@ export function SectionPage({ section, others }: SectionPageProps) {
             </h2>
             <ul className={styles.pills}>
               {others.map((s) => (
-                <li key={s.category.id}>
-                  <Link href={`/collections/${s.category.id}`} className={styles.pill}>
-                    {s.category.label}
+                <li key={s.id}>
+                  <Link href={s.href} className={styles.pill}>
+                    {s.title}
                     <span className={styles.pillCount}>{s.products.length}</span>
                   </Link>
                 </li>

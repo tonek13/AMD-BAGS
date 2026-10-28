@@ -30,8 +30,10 @@ export interface Product {
   description: string;
   /** Optional short facts for the details panel (only the demo data has them). */
   details?: string[];
-  /** Price in the major unit of the shop currency (e.g. 88 = $88). */
+  /** Price in the major unit of the shop currency (e.g. 88 = $88). On sale, this is the sale price. */
   price: number;
+  /** The previous price, only while the bag is on sale (shown struck through next to `price`). */
+  compareAtPrice?: number;
   /** Slug of the collection the bag belongs to, or null. */
   category: string | null;
   /** Ids of the available colours (see `ColorOption`). */
@@ -59,9 +61,34 @@ export interface ColorOption {
   swatch: [string] | [string, string];
 }
 
+/** The Sale shelf: which bags are on sale (their prices are already the sale prices). */
+export interface SaleSection {
+  title: string;
+  slugs: string[];
+}
+
+/** "Buy `buy`, get `free` free" on a set of bags. */
+export interface Offer {
+  id: string;
+  /** Shown above the bags. Falls back to the rule itself, e.g. "Buy 2, get 1 free". */
+  title: string;
+  slugs: string[];
+  buy: number;
+  free: number;
+}
+
+export interface OffersSection {
+  title: string;
+  offers: Offer[];
+}
+
 /** Everything the storefront needs to render the shop. */
 export interface Catalog {
   products: Product[];
   categories: CategoryOption[];
   colors: ColorOption[];
+  /** Present only when the owner ticked "Show the sale" and at least one bag is on sale. */
+  sale: SaleSection | null;
+  /** Present only when the owner ticked "Show the offers" and at least one offer is valid. */
+  offers: OffersSection | null;
 }

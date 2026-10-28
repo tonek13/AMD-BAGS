@@ -12,11 +12,25 @@ import "server-only";
 import { cacheLife, cacheTag } from "next/cache";
 import { siteConfig } from "@/config/site";
 import { craftMoments, type CraftMoment } from "@/data/craft";
-import { categories as demoCategories, colors as demoColors, products as demoProducts } from "@/data/demo-products";
+import {
+  categories as demoCategories,
+  colors as demoColors,
+  offers as demoOffers,
+  products as demoProducts,
+  sale as demoSale,
+} from "@/data/demo-products";
 import { getDataSource } from "@/lib/env";
 import { getSanityClient } from "@/sanity/lib/client";
-import { buildCatalog, mapSettings, type RawCollection, type RawProduct, type RawSettings } from "@/sanity/lib/mappers";
-import { COLLECTIONS_QUERY, PRODUCTS_QUERY, SETTINGS_QUERY } from "@/sanity/lib/queries";
+import {
+  buildCatalog,
+  mapSettings,
+  type RawCollection,
+  type RawOffers,
+  type RawProduct,
+  type RawSale,
+  type RawSettings,
+} from "@/sanity/lib/mappers";
+import { COLLECTIONS_QUERY, OFFERS_QUERY, PRODUCTS_QUERY, SALE_QUERY, SETTINGS_QUERY } from "@/sanity/lib/queries";
 import { CACHE_TAGS } from "@/sanity/tags";
 import type { Catalog, Product } from "@/types/catalog";
 import type { ShopSettings } from "@/types/settings";
@@ -31,14 +45,16 @@ const CATALOG_LIFE = { stale: 300, revalidate: 3600, expire: 604800 };
 async function loadSanityCatalog(): Promise<Catalog> {
   "use cache";
   cacheLife(CATALOG_LIFE);
-  cacheTag(CACHE_TAGS.product, CACHE_TAGS.collection);
+  cacheTag(CACHE_TAGS.product, CACHE_TAGS.collection, CACHE_TAGS.promo);
 
   const client = getSanityClient();
-  const [products, collections] = await Promise.all([
+  const [products, collections, sale, offers] = await Promise.all([
     client.fetch<RawProduct[]>(PRODUCTS_QUERY),
     client.fetch<RawCollection[]>(COLLECTIONS_QUERY),
+    client.fetch<RawSale | null>(SALE_QUERY),
+    client.fetch<RawOffers | null>(OFFERS_QUERY),
   ]);
-  return buildCatalog(products ?? [], collections ?? []);
+  return buildCatalog(products ?? [], collections ?? [], sale, offers);
 }
 
 async function loadSanitySettings(): Promise<ShopSettings> {
@@ -54,6 +70,7 @@ function demoSettings(): ShopSettings {
   return {
     ...mapSettings(null),
     whatsappNumber: siteConfig.demoWhatsappNumber,
+    deliveryFee: siteConfig.demoDeliveryFee,
     heroIntro: "Chunky crochet bags in burgundy, cream, peach and black — every one hooked by hand, one stitch at a time.",
     demo: true,
   };
@@ -61,7 +78,9 @@ function demoSettings(): ShopSettings {
 
 /** Everything the storefront needs to list, filter and sell bags. Hidden products are never in it. */
 export async function getCatalog(): Promise<Catalog> {
-  if (getDataSource() === "demo") return { products: demoProducts, categories: demoCategories, colors: demoColors };
+  if (getDataSource() === "demo") {
+    return { products: demoProducts, categories: demoCategories, colors: demoColors, sale: demoSale, offers: demoOffers };
+  }
   return loadSanityCatalog();
 }
 

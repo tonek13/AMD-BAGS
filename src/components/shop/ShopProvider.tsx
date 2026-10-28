@@ -1,11 +1,11 @@
 "use client";
 
 import { useCallback, useMemo, useRef, useState, useSyncExternalStore } from "react";
-import type { CategoryOption, ColorOption, Product } from "@/types/catalog";
+import type { CategoryOption, ColorOption, Offer, OffersSection, Product, SaleSection } from "@/types/catalog";
 import type { ShopSettings } from "@/types/settings";
 import { siteConfig } from "@/config/site";
 import type { CartCheckResponse } from "@/lib/cart-check";
-import { computeLines, diffLines, type CartNotice, type LiveMap } from "@/lib/cart-lines";
+import { computeLines, diffLines, priceLines, type CartNotice, type LiveMap } from "@/lib/cart-lines";
 import { createFormatters } from "@/lib/format";
 import {
   addItem,
@@ -26,12 +26,20 @@ interface ShopProviderProps {
   products: Product[];
   categories: CategoryOption[];
   colors: ColorOption[];
+  sale: SaleSection | null;
+  offersSection: OffersSection | null;
   children: React.ReactNode;
 }
 
 const CHECK_TIMEOUT_MS = 8000;
 
-export function ShopProvider({ settings, products, categories, colors, children }: ShopProviderProps) {
+/** The parts of the price that are not bags: the offers in force and the delivery fee. */
+interface Terms {
+  offers: Offer[];
+  deliveryFee: number;
+}
+
+export function ShopProvider({ settings, products, categories, colors, sale, offersSection, children }: ShopProviderProps) {
   const stored = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
   const [cartOpen, setCartOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -42,12 +50,18 @@ export function ShopProvider({ settings, products, categories, colors, children 
   const [notices, setNotices] = useState<CartNotice[]>([]);
   // The latest live check, readable synchronously from event handlers.
   const liveRef = useRef<LiveMap | null>(null);
+  // Offers and delivery fee: from the page until the first live check, then from the live check.
+  const baseTerms = useMemo<Terms>(() => ({ offers: offersSection?.offers ?? [], deliveryFee: settings.deliveryFee }), [offersSection, settings.deliveryFee]);
+  const [liveTerms, setLiveTerms] = useState<Terms | null>(null);
+  const termsRef = useRef<Terms | null>(null);
+  const terms = liveTerms ?? baseTerms;
 
   const formatters = useMemo(() => createFormatters(settings.currency, settings.locale), [settings.currency, settings.locale]);
 
   const lines = useMemo(() => computeLines(stored, products, live), [stored, products, live]);
   const count = useMemo(() => lines.reduce((n, l) => (l.available ? n + l.quantity : n), 0), [lines]);
   const subtotalCents = useMemo(() => lines.reduce((sum, l) => sum + l.lineCents, 0), [lines]);
+  const pricing = useMemo(() => priceLines(lines, terms.offers, terms.deliveryFee), [lines, terms]);
 
   const addToCart = useCallback(
     (slug: string, quantity = 1) => {
@@ -63,6 +77,7 @@ export function ShopProvider({ settings, products, categories, colors, children 
     const current = getSnapshot();
     const before = computeLines(current, products, liveRef.current);
     if (current.length === 0) return { ok: true, changed: false, lines: before };
+    const termsBefore = termsRef.current ?? baseTerms;
 
     setCheckingCart(true);
     try {
@@ -86,8 +101,19 @@ export function ShopProvider({ settings, products, categories, colors, children 
       liveRef.current = next;
       setLive(next);
 
+      const termsNow: Terms = {
+        offers: Array.isArray(data.offers) ? data.offers : baseTerms.offers,
+        deliveryFee: typeof data.deliveryFee === "number" ? data.deliveryFee : baseTerms.deliveryFee,
+      };
+      termsRef.current = termsNow;
+      setLiveTerms(termsNow);
+
       const after = computeLines(getSnapshot(), products, next);
       const found = diffLines(before, after);
+      // No bag changed, yet the total did: the delivery fee or an offer is different now.
+      if (found.length === 0 && priceLines(after, termsNow.offers, termsNow.deliveryFee).totalCents !== priceLines(before, termsBefore.offers, termsBefore.deliveryFee).totalCents) {
+        found.push({ slug: "terms", name: "Delivery and offers", kind: "terms" });
+      }
       if (found.length > 0) {
         setNotices((prev) => [...prev.filter((n) => !found.some((f) => f.slug === n.slug)), ...found]);
       }
@@ -98,7 +124,7 @@ export function ShopProvider({ settings, products, categories, colors, children 
     } finally {
       setCheckingCart(false);
     }
-  }, [products]);
+  }, [products, baseTerms]);
 
   const openCart = useCallback(() => {
     setCartOpen(true);
@@ -113,7 +139,10 @@ export function ShopProvider({ settings, products, categories, colors, children 
       products,
       categories,
       colors,
+      sale,
+      offersSection,
       lines,
+      pricing,
       count,
       subtotalCents,
       addToCart,
@@ -139,7 +168,7 @@ export function ShopProvider({ settings, products, categories, colors, children 
       openProduct: (slug) => setActiveProductSlug(slug),
       closeProduct: () => setActiveProductSlug(null),
     }),
-    [formatters, settings, products, categories, colors, lines, count, subtotalCents, addToCart, refreshCart, checkingCart, notices, cartOpen, openCart, menuOpen, menuPath, activeProductSlug],
+    [formatters, settings, products, categories, colors, sale, offersSection, lines, pricing, count, subtotalCents, addToCart, refreshCart, checkingCart, notices, cartOpen, openCart, menuOpen, menuPath, activeProductSlug],
   );
 
   return (

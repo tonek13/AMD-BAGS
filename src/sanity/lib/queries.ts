@@ -34,6 +34,26 @@ export const COLLECTIONS_QUERY = defineQuery(`
   "showAsSection": showAsSection == true
 }`);
 
+/** The Sale singleton: bags with a previous and a new price. Only counts while "show" is on (see parseSale). */
+export const SALE_QUERY = defineQuery(`
+*[_type == "saleSection" && _id == "saleSection"][0] {
+  show,
+  title,
+  "items": items[defined(product._ref)]{ "slug": product->slug.current, previousPrice, newPrice }
+}`);
+
+/** The Offers singleton: "buy X, get Y free" on sets of bags. Only counts while "show" is on (see parseOffers). */
+export const OFFERS_QUERY = defineQuery(`
+*[_type == "offersSection" && _id == "offersSection"][0] {
+  show,
+  title,
+  "offers": offers[]{ _key, title, buy, free, "slugs": products[defined(_ref)]->slug.current }
+}`);
+
+/** Just the delivery fee, read live when an order is checked (never from a cache). */
+export const DELIVERY_FEE_QUERY = defineQuery(`
+*[_type == "shopSettings" && _id == "shopSettings"][0].deliveryFee`);
+
 /** The Shop Settings singleton (its document id is fixed). */
 export const SETTINGS_QUERY = defineQuery(`
 *[_type == "shopSettings" && _id == "shopSettings"][0] {
@@ -43,6 +63,7 @@ export const SETTINGS_QUERY = defineQuery(`
   whatsappNumber,
   email,
   location,
+  deliveryFee,
   "socialLinks": socialLinks[]{ platform, url },
   heroHeadline,
   heroIntro,

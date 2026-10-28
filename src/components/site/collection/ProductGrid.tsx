@@ -3,6 +3,7 @@
 import Image from "next/image";
 import type { Product } from "@/types/catalog";
 import { AvailabilityBadge } from "@/components/shop/AvailabilityBadge";
+import { Price } from "@/components/shop/Price";
 import { useShop } from "@/components/shop/shop-context";
 import type { Density } from "./filters";
 import styles from "./ProductGrid.module.css";
@@ -64,7 +65,7 @@ function ProductCard({ product, hidden, categoryLabel, colorLabel, formatPrice, 
           type="button"
           className={styles.media}
           onClick={onOpen}
-          aria-label={`${product.name}, ${formatPrice(product.price)}${soldOut ? ", sold out" : ""} – view details`}
+          aria-label={`${product.name}, ${formatPrice(product.price)}${product.compareAtPrice !== undefined ? ` (was ${formatPrice(product.compareAtPrice)})` : ""}${soldOut ? ", sold out" : ""} – view details`}
         >
           <Image
             className={styles.photo}
@@ -93,7 +94,9 @@ function ProductCard({ product, hidden, categoryLabel, colorLabel, formatPrice, 
         <div className={styles.meta}>
           <div className={styles.titleRow}>
             <h3 className={styles.name}>{product.name}</h3>
-            <p className={styles.price}>{formatPrice(product.price)}</p>
+            <p className={styles.price}>
+              <Price product={product} formatPrice={formatPrice} />
+            </p>
           </div>
           <p className={styles.sub}>{[colorLabel, categoryLabel].filter(Boolean).join(" · ")}</p>
           <button type="button" className={styles.add} disabled={soldOut} onClick={onAdd}>

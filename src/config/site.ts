@@ -21,6 +21,7 @@ export interface SiteConfig {
   maxQuantityPerItem: number;
   cartStorageKey: string;
   demoWhatsappNumber: string;
+  demoDeliveryFee: number;
   defaults: {
     heroHeadline: string[];
     heroIntro: string;
@@ -47,6 +48,9 @@ export const siteConfig: SiteConfig = {
 
   /** Number used by the sample data in demo mode only. */
   demoWhatsappNumber: "+961 81 616 199",
+
+  /** Delivery fee used by the sample data in demo mode only. */
+  demoDeliveryFee: 5,
 
   defaults: {
     heroHeadline: ["Made slowly,", "carried", "everywhere."],

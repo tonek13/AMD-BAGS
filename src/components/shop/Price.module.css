@@ -1,0 +1,17 @@
+.sale {
+  display: inline-flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.1rem 0.5rem;
+}
+
+.was {
+  font-size: 0.82em;
+  font-weight: 500;
+  color: var(--ink-soft);
+  text-decoration-thickness: 1.5px;
+}
+
+.now {
+  color: var(--burgundy);
+}

@@ -8,6 +8,7 @@ import type { OrderCustomer } from "@/lib/orders";
 import { CheckoutPanel, emptyCustomer, newOrderId, type PlacedOrder } from "./CheckoutPanel";
 import { ModalDialog } from "./ModalDialog";
 import { QuantityStepper } from "./QuantityStepper";
+import { Totals } from "./Totals";
 import { useShop } from "./shop-context";
 import styles from "./CartDrawer.module.css";
 
@@ -20,7 +21,7 @@ export function CartDrawer() {
     formatPrice,
     lines,
     count,
-    subtotalCents,
+    pricing,
     cartOpen,
     closeCart,
     setQuantity,
@@ -109,7 +110,7 @@ export function CartDrawer() {
       ) : view === "checkout" && orderable.length > 0 ? (
         <CheckoutPanel
           lines={orderable}
-          totalCents={orderable.reduce((sum, l) => sum + l.lineCents, 0)}
+          pricing={pricing}
           values={customer}
           onValuesChange={setCustomer}
           orderId={orderId ?? ""}
@@ -143,6 +144,7 @@ export function CartDrawer() {
                   {n.kind === "removed" && `${n.name} is no longer available, so it has been left out of your order.`}
                   {n.kind === "sold-out" && `${n.name} has just sold out, so it has been left out of your order.`}
                   {n.kind === "price" && `${n.name} changed price: ${formatPrice(n.from ?? 0)} → ${formatPrice(n.to ?? 0)}.`}
+                  {n.kind === "terms" && "The delivery fee or an offer changed, so your total was updated."}
                 </li>
               ))}
             </ul>
@@ -234,10 +236,7 @@ export function CartDrawer() {
             </ul>
 
             <footer className={styles.footer}>
-              <div className={styles.subtotal}>
-                <span>Subtotal</span>
-                <strong>{formatMoney(fromCents(subtotalCents))}</strong>
-              </div>
+              <Totals pricing={pricing} />
               <p className={styles.note}>Pay cash on delivery. There is no online payment: you pay when your order arrives.</p>
 
               {orderable.length === 0 ? (
@@ -302,7 +301,8 @@ function OrderPlaced({
           Your order <strong>{order.reference}</strong> is with {brandName}. We’ll contact you on <strong>{order.phone}</strong> to confirm the delivery.
         </p>
         <p className={styles.doneText}>
-          Please have <strong>{formatMoney(fromCents(order.totalCents))}</strong> ready in cash when it arrives.
+          Your total is <strong>{formatMoney(fromCents(order.totalCents))}</strong>
+          {order.deliveryCents > 0 ? ", delivery included," : ""} paid in cash when your order arrives.
         </p>
         <button type="button" className="btn" onClick={onClose}>
           Keep browsing

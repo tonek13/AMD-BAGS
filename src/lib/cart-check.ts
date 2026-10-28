@@ -1,4 +1,4 @@
-import type { Availability } from "@/types/catalog";
+import type { Availability, Offer } from "@/types/catalog";
 
 /** Request/response shapes of POST /api/catalog/check, shared by the route and the browser. */
 export interface CartCheckItem {
@@ -12,6 +12,10 @@ export interface CartCheckItem {
 
 export interface CartCheckResponse {
   items: CartCheckItem[];
+  /** The offers in force right now ("buy 2, get 1 free"). */
+  offers: Offer[];
+  /** The delivery fee right now, in the shop currency. */
+  deliveryFee: number;
 }
 
 export const MAX_CHECK_SLUGS = 50;

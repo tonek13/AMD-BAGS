@@ -48,6 +48,8 @@ const env = {
   SANITY_REVALIDATE_SECRET: SECRET,
   NEXT_DIST_DIR: ".next-test",
   // Orders are emailed through Resend; the tests point it at a stand-in server (below).
+  // The order limit is 8 per address per 10 minutes by default; these tests place more than that.
+  ORDER_RATE_LIMIT_MAX: "40",
   RESEND_API_KEY: "re_test_key",
   ORDER_EMAIL_TO: "owner@example.com",
   RESEND_BASE_URL: `http://localhost:${RESEND_PORT}`,
@@ -394,8 +396,80 @@ try {
   check("when the email service refuses, the customer is told it failed (502), not that it worked", order.status === 502 && order.json.code === "email-failed", JSON.stringify(order.json));
   resendRefuses = false;
 
+  // ── D4. delivery fee, sale prices and offers ───────────────────────────
+  console.log("\nDelivery fee, sale and offers");
+  await setData(dataset());
+  for (const type of ["saleSection", "offersSection", "shopSettings", "product"]) await webhook({ _type: type, _id: type });
+  html = await page();
+  const homeVisible = visible(html);
+  check("the Sale and Offers shelves appear on the homepage and link to their pages", html.includes('href="/sale"') && html.includes('href="/offers"'));
+  check("a bag on sale shows its previous price struck through and the new price", /<s[^>]*>[^<]*€100/.test(homeVisible) && homeVisible.includes("€70"));
+  check("an offer shows its name and rule", homeVisible.includes("Pouch trio") && homeVisible.includes("Buy 2, get 1 free"));
+  const salePage = await fetch(`${APP}/sale`);
+  const saleVisible = visible(await salePage.text());
+  check("the Sale page lists the bag on sale only", salePage.status === 200 && saleVisible.includes("Sunset Tote") && !saleVisible.includes("Peach Pouch"));
+  const offersPage = await fetch(`${APP}/offers`);
+  const offersVisible = visible(await offersPage.text());
+  check("the Offers page lists the bags of the offer", offersPage.status === 200 && offersVisible.includes("Pouch trio") && offersVisible.includes("Mint Pouch") && !offersVisible.includes("Sunset Tote"));
+
+  const live = await checkCart(["sunset-tote", "peach-pouch"]);
+  check("the cart check returns the sale price, the offers and the delivery fee", live.json.items?.[0]?.price === 70 && live.json.offers?.[0]?.title === "Pouch trio" && live.json.offers[0].slugs.length === 3 && live.json.deliveryFee === 0, JSON.stringify(live.json));
+
+  order = await placeOrder({ items: [{ slug: "sunset-tote", quantity: 1 }], expectedTotalCents: 7000 });
+  check("a bag on sale is charged the sale price", order.status === 200 && /1 × Sunset Tote @ €70\.00/.test(sentEmails.at(-1)?.body.text ?? ""), JSON.stringify(order.json));
+
+  order = await placeOrder({
+    items: [
+      { slug: "peach-pouch", quantity: 1 },
+      { slug: "plum-pouch", quantity: 1 },
+      { slug: "mint-pouch", quantity: 1 },
+    ],
+    expectedTotalCents: 9000,
+  });
+  const offerMail = sentEmails.at(-1)?.body.text ?? "";
+  check("buy 2, get 1 free: the cheapest of three offer bags is free", order.status === 200 && /Offer – Pouch trio \(1 free\): -€30\.00/.test(offerMail) && /TOTAL TO COLLECT: €90\.00/.test(offerMail), JSON.stringify(order.json));
+  order = await placeOrder({
+    items: [
+      { slug: "peach-pouch", quantity: 1 },
+      { slug: "plum-pouch", quantity: 1 },
+    ],
+    expectedTotalCents: 7000,
+  });
+  check("two offer bags are not enough: no discount yet", order.status === 200 && !/Offer –/.test(sentEmails.at(-1)?.body.text ?? ""));
+  order = await placeOrder({
+    items: [
+      { slug: "peach-pouch", quantity: 1 },
+      { slug: "plum-pouch", quantity: 1 },
+      { slug: "mint-pouch", quantity: 1 },
+    ],
+    expectedTotalCents: 12000,
+  });
+  check("an order that ignores the offer total is refused as changed (409)", order.status === 409 && order.json.code === "changed");
+
+  await setData(dataset().map((d) => (d._id === "shopSettings" ? { ...d, deliveryFee: 4.5 } : d)));
+  order = await placeOrder({ items: [{ slug: "sunset-tote", quantity: 1 }], expectedTotalCents: 7450 });
+  const feeMail = sentEmails.at(-1)?.body.text ?? "";
+  check("the delivery fee is added to the total", order.status === 200 && /Delivery: €4\.50/.test(feeMail) && /TOTAL TO COLLECT: €74\.50/.test(feeMail), JSON.stringify(order.json));
+  order = await placeOrder({ items: [{ slug: "sunset-tote", quantity: 1 }], expectedTotalCents: 7000 });
+  check("a total without the delivery fee is refused as changed (409)", order.status === 409 && order.json.code === "changed");
+  check("the cart check reports the delivery fee", (await checkCart(["sunset-tote"])).json.deliveryFee === 4.5);
+
+  // switching the sale off: prices return to normal and its shelf and page empty out
+  await setData(dataset().map((d) => (d._id === "saleSection" ? { ...d, show: false } : d)));
+  await webhook({ _type: "saleSection", _id: "saleSection" });
+  order = await placeOrder({ items: [{ slug: "sunset-tote", quantity: 1 }], expectedTotalCents: 10000 });
+  check("with the sale switched off the normal price is charged", order.status === 200 && /Sunset Tote @ €100\.00/.test(sentEmails.at(-1)?.body.text ?? ""), JSON.stringify(order.json));
+  html = await page();
+  check("with the sale switched off its shelf and prices disappear", !html.includes('href="/sale"') && !/<s[^>]*>[^<]*€100/.test(visible(html)));
+  const saleOff = visible(await (await fetch(`${APP}/sale`)).text());
+  check("the Sale page then says there is no sale (and is not a dead end)", saleOff.includes("no sale on right now") && !saleOff.includes("Sunset Tote"));
+  await setData(dataset());
+  await webhook({ _type: "saleSection", _id: "saleSection" });
+  await webhook({ _type: "shopSettings", _id: "shopSettings" });
+  check("switching the sale back on restores its page", visible(await (await fetch(`${APP}/sale`)).text()).includes("Sunset Tote"));
+
   let limited = false;
-  for (let i = 0; i < 12 && !limited; i++) limited = (await placeOrder()).status === 429;
+  for (let i = 0; i < 50 && !limited; i++) limited = (await placeOrder()).status === 429;
   check("too many orders from one address are slowed down (429)", limited);
 
   // ── E. the Studio is separate from the storefront ──────────────────────

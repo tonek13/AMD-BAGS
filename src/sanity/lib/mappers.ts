@@ -1,6 +1,7 @@
 import { siteConfig } from "@/config/site";
+import { offerRule } from "@/lib/pricing";
 import { deriveTheme } from "@/lib/theme";
-import type { Availability, Catalog, CategoryOption, ColorOption, Product } from "@/types/catalog";
+import type { Availability, Catalog, CategoryOption, ColorOption, Offer, Product } from "@/types/catalog";
 import type { ShopSettings, SocialLink } from "@/types/settings";
 import { toProductImage, type RawImage } from "./image";
 
@@ -33,6 +34,24 @@ export interface RawCollection {
   showAsSection?: boolean | null;
 }
 
+export interface RawSale {
+  show?: boolean | null;
+  title?: string | null;
+  items?: { slug?: string | null; previousPrice?: number | null; newPrice?: number | null }[] | null;
+}
+
+export interface RawOffers {
+  show?: boolean | null;
+  title?: string | null;
+  offers?: {
+    _key?: string | null;
+    title?: string | null;
+    buy?: number | null;
+    free?: number | null;
+    slugs?: (string | null)[] | null;
+  }[] | null;
+}
+
 export interface RawSettings {
   brandName?: string | null;
   logo?: RawImage | null;
@@ -40,6 +59,7 @@ export interface RawSettings {
   whatsappNumber?: string | null;
   email?: string | null;
   location?: string | null;
+  deliveryFee?: number | null;
   socialLinks?: { platform?: string | null; url?: string | null }[] | null;
   heroHeadline?: string | null;
   heroIntro?: string | null;
@@ -114,7 +134,60 @@ export function mapProduct(raw: RawProduct): Product | null {
   };
 }
 
-export function buildCatalog(rawProducts: RawProduct[], rawCollections: RawCollection[]): Catalog {
+/** A delivery fee from the CMS: a finite number of at least 0, to the cent. Anything else means free delivery. */
+export function parseDeliveryFee(value: unknown): number {
+  return typeof value === "number" && Number.isFinite(value) && value > 0 ? Math.round(value * 100) / 100 : 0;
+}
+
+const isCount = (n: unknown): n is number => typeof n === "number" && Number.isInteger(n) && n >= 1 && n <= 10;
+
+/**
+ * The Sale document → previous and new price per bag slug. Empty unless "Show the sale" is ticked, so
+ * switching it off puts every price back to normal. Entries with a missing bag, a negative price or a
+ * "new" price that is not lower than the previous one are skipped; a bag listed twice keeps its first entry.
+ */
+export function parseSale(raw: RawSale | null | undefined): Map<string, { previousPrice: number; newPrice: number }> {
+  const out = new Map<string, { previousPrice: number; newPrice: number }>();
+  if (raw?.show !== true) return out;
+  for (const item of raw.items ?? []) {
+    const slug = text(item?.slug);
+    const { previousPrice, newPrice } = item ?? {};
+    if (!slug || out.has(slug)) continue;
+    if (typeof previousPrice !== "number" || typeof newPrice !== "number") continue;
+    if (!Number.isFinite(previousPrice) || !Number.isFinite(newPrice) || newPrice < 0 || newPrice >= previousPrice) continue;
+    out.set(slug, { previousPrice, newPrice });
+  }
+  return out;
+}
+
+/**
+ * The Offers document → valid offers. Empty unless "Show the offers" is ticked. `isKnown` says which bag
+ * slugs can be used (the storefront passes the visible bags). A bag belongs to the first offer that lists it.
+ */
+export function parseOffers(raw: RawOffers | null | undefined, isKnown: (slug: string) => boolean): Offer[] {
+  if (raw?.show !== true) return [];
+  const used = new Set<string>();
+  const offers: Offer[] = [];
+  (raw.offers ?? []).forEach((o, index) => {
+    if (!isCount(o?.buy) || !isCount(o?.free)) return;
+    const slugs: string[] = [];
+    for (const s of o.slugs ?? []) {
+      const slug = text(s);
+      if (slug && isKnown(slug) && !used.has(slug) && !slugs.includes(slug)) slugs.push(slug);
+    }
+    if (slugs.length === 0) return;
+    slugs.forEach((s) => used.add(s));
+    offers.push({ id: text(o?._key) || `offer-${index}`, title: text(o?.title) || offerRule({ buy: o.buy, free: o.free }), slugs, buy: o.buy, free: o.free });
+  });
+  return offers;
+}
+
+export function buildCatalog(
+  rawProducts: RawProduct[],
+  rawCollections: RawCollection[],
+  rawSale: RawSale | null = null,
+  rawOffers: RawOffers | null = null,
+): Catalog {
   const products = rawProducts.map(mapProduct).filter((p): p is Product => p !== null);
 
   // A bag only keeps its collection if that collection is published.
@@ -147,7 +220,22 @@ export function buildCatalog(rawProducts: RawProduct[], rawCollections: RawColle
   const usedColors = new Set(products.flatMap((p) => p.colors));
   const colors = [...colorMap.values()].filter((c) => usedColors.has(c.id));
 
-  return { products, categories, colors };
+  // Sale: the bag's price becomes the new price and the old one is kept for display.
+  const bySlug = new Map(products.map((p) => [p.slug, p]));
+  const saleSlugs: string[] = [];
+  for (const [slug, { previousPrice, newPrice }] of parseSale(rawSale)) {
+    const product = bySlug.get(slug);
+    if (!product) continue;
+    product.compareAtPrice = previousPrice;
+    product.price = newPrice;
+    saleSlugs.push(slug);
+  }
+  const sale = saleSlugs.length > 0 ? { title: text(rawSale?.title) || "Sale", slugs: saleSlugs } : null;
+
+  const offerList = parseOffers(rawOffers, (slug) => bySlug.has(slug));
+  const offers = offerList.length > 0 ? { title: text(rawOffers?.title) || "Offers", offers: offerList } : null;
+
+  return { products, categories, colors, sale, offers };
 }
 
 const SOCIAL_LABELS: Record<string, string> = {
@@ -191,6 +279,7 @@ export function mapSettings(raw: RawSettings | null | undefined): ShopSettings {
     locale: siteConfig.locale,
     whatsappNumber: text(raw?.whatsappNumber),
     contact: { email: text(raw?.email), location: text(raw?.location) },
+    deliveryFee: parseDeliveryFee(raw?.deliveryFee),
     socialLinks,
     heroHeadline: lines.length ? lines.slice(0, 4) : siteConfig.defaults.heroHeadline,
     heroIntro: text(raw?.heroIntro) || siteConfig.defaults.heroIntro,

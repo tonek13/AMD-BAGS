@@ -59,7 +59,9 @@ With **reduced motion** (OS setting) the story is not pinned or animated: visito
 | --- | --- |
 | **Sanity → Products** | name, slug, description, price, ordered photo gallery (alt text, crop, hotspot), collection, colours, availability (Available / Sold out), hidden, featured, display order |
 | **Sanity → Collections** | name, slug, optional image, display order, show as its own section |
-| **Sanity → Shop Settings** | brand name, logo, currency, WhatsApp number, contact + social links, homepage headline/intro, craft heading/text |
+| **Sanity → Sale** | on/off switch, shelf title, bags with a previous and a new price (the new price is what is charged while it is on) |
+| **Sanity → Offers** | on/off switch, shelf title, offers: a set of bags + "buy X, get Y free" (cheapest free, applied at checkout) |
+| **Sanity → Shop Settings** | brand name, logo, currency, delivery fee, WhatsApp number, contact + social links, homepage headline/intro, craft heading/text |
 | `src/config/site.ts` | technical constants and the fallback wording used when a Shop Settings text field is empty. **The WhatsApp number has no code default for the connected shop** (empty = hidden; it is only used for the contact block and the footer) |
 | `src/data/craft.ts`, `src/data/story.ts`, `src/components/story/stages.ts` | the craft close-ups, the story photo and the story captions (brand content, not products) |
 
@@ -94,6 +96,7 @@ src/lib/cart-store.ts       localStorage cart (useSyncExternalStore, hydration-s
 src/lib/cart-lines.ts       how each bag in the cart stands now (ok / sold out / removed)
 src/lib/whatsapp.ts         wa.me link + number check (contact block, footer)
 src/lib/orders.ts           order shapes + validation shared by the checkout form and the server
+src/lib/pricing.ts          subtotal, "buy X get Y free" offers, delivery fee, total (shared by browser and server)
 src/lib/order-email.ts      the owner's "new order" email (HTML + text)
 src/app/api/orders/         POST /api/orders: validate, re-price from live data, email via Resend
 scripts/import-products.mjs optional one-time import of the current bags as drafts

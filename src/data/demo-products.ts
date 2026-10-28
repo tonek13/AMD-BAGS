@@ -1,4 +1,4 @@
-import type { CategoryOption, ColorOption, Product } from "@/types/catalog";
+import type { CategoryOption, ColorOption, OffersSection, Product, SaleSection } from "@/types/catalog";
 
 /**
  * ─────────────────────────────────────────────────────────────────────────
@@ -59,7 +59,8 @@ export const products: Product[] = [
     description:
       "A plump rounded bag in black with two braided handles joined by gold-toned rings. The chunky stitches catch the light and keep their shape.",
     details: ["Hand crocheted", "Two braided handles", "Gold-toned rings", "Soft, rounded shape"],
-    price: 92,
+    price: 70,
+    compareAtPrice: 92,
     category: "top-handle",
     colors: ["black"],
     availability: "in-stock",
@@ -111,7 +112,8 @@ export const products: Product[] = [
     description:
       "A generous half-moon tote in warm cream with smooth wooden handles and a golden tassel. Tightly worked stitches give the body a woven, structured look.",
     details: ["Hand crocheted", "Wooden handles", "Golden tassel", "Roomy half-moon body"],
-    price: 118,
+    price: 95,
+    compareAtPrice: 118,
     category: "tote",
     colors: ["cream"],
     availability: "in-stock",
@@ -172,3 +174,20 @@ export const products: Product[] = [
     featured: { order: 4, theme: { bg: "#ead6d0", ink: "#3b0f1e", accent: "#6b1631" } },
   },
 ];
+
+/** Sample sale: two bags with a previous price (their `price` above is already the sale price). */
+export const sale: SaleSection = { title: "Sale", slugs: ["noir-nest-bag", "creme-crescent-bag"] };
+
+/** Sample offer: buy 2 of these three, get 1 free. */
+export const offers: OffersSection = {
+  title: "Offers",
+  offers: [
+    {
+      id: "demo-trio",
+      title: "Buy 2, get 1 free",
+      slugs: ["apricot-arch-bag", "bordeaux-clutch", "cherry-ripple-basket"],
+      buy: 2,
+      free: 1,
+    },
+  ],
+};

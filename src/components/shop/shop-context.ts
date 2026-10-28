@@ -3,7 +3,8 @@
 import { createContext, useContext } from "react";
 import type { CartLineView, CartNotice } from "@/lib/cart-lines";
 import type { Formatters } from "@/lib/format";
-import type { CategoryOption, ColorOption, Product } from "@/types/catalog";
+import type { Pricing } from "@/lib/pricing";
+import type { CategoryOption, ColorOption, OffersSection, Product, SaleSection } from "@/types/catalog";
 import type { ShopSettings } from "@/types/settings";
 
 export type { CartLineView, CartNotice };
@@ -22,7 +23,13 @@ export interface ShopContextValue extends Formatters {
   products: Product[];
   categories: CategoryOption[];
   colors: ColorOption[];
+  /** The Sale shelf, when the owner switched it on. */
+  sale: SaleSection | null;
+  /** The Offers shelf, when the owner switched it on. */
+  offersSection: OffersSection | null;
   lines: CartLineView[];
+  /** What the bag adds up to right now: subtotal, offers, delivery fee, total. */
+  pricing: Pricing;
   /** Number of bags (sum of quantities) that can actually be ordered. */
   count: number;
   subtotalCents: number;

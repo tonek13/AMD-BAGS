@@ -78,6 +78,16 @@ export const shopSettingsType = defineType({
       validation: (rule) => rule.required(),
     }),
     defineField({
+      name: "deliveryFee",
+      title: "Delivery fee",
+      type: "number",
+      group: "ordering",
+      description:
+        "Added to every order at checkout, in the shop currency (for example 4 or 4.5). Customers see it in their bag and in the total. Leave empty or 0 for free delivery.",
+      initialValue: 0,
+      validation: (rule) => rule.min(0).max(1000),
+    }),
+    defineField({
       name: "whatsappNumber",
       title: "WhatsApp number",
       type: "string",

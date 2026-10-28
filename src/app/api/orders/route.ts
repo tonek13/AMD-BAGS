@@ -3,9 +3,10 @@ import { Resend } from "resend";
 import { getShopSettings } from "@/lib/catalog";
 import { getOrderEmailEnv } from "@/lib/env";
 import { createFormatters, toCents } from "@/lib/format";
-import { lookupLiveProducts } from "@/lib/live-products";
+import { lookupLiveShop } from "@/lib/live-products";
 import { buildOrderEmail, type OrderEmailLine } from "@/lib/order-email";
 import { ORDER_LIMITS, orderReference, parseOrderRequest, type OrderErrorCode, type OrderResponse } from "@/lib/orders";
+import { computePricing } from "@/lib/pricing";
 import { tooManyRequests } from "@/lib/rate-limit";
 
 /**
@@ -51,7 +52,9 @@ export async function POST(request: Request) {
   if (order.website) return NextResponse.json({ ok: true, reference } satisfies OrderResponse, { headers: NO_STORE });
 
   const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
-  if (tooManyRequests(`order:${ip}`, 8, 10 * 60_000)) {
+  // 8 orders per address per 10 minutes (ORDER_RATE_LIMIT_MAX raises it; the tests do).
+  const rateLimit = Number(process.env.ORDER_RATE_LIMIT_MAX) || 8;
+  if (tooManyRequests(`order:${ip}`, rateLimit, 10 * 60_000)) {
     return fail("rate-limited", "Too many attempts. Please wait a few minutes and try again.");
   }
 
@@ -69,10 +72,10 @@ export async function POST(request: Request) {
     return fail("not-configured", "Ordering is not open yet. Please contact the shop directly.");
   }
 
-  // Prices and stock as they are right now.
+  // Prices, stock, offers and the delivery fee as they are right now.
   let live;
   try {
-    live = await lookupLiveProducts(order.items.map((i) => i.slug));
+    live = await lookupLiveShop(order.items.map((i) => i.slug));
   } catch (error) {
     console.error("[orders] could not read the shop data", error);
     return fail("email-failed", "We couldn’t check the latest prices just now. Please try again in a moment.");
@@ -80,7 +83,7 @@ export async function POST(request: Request) {
 
   const lines: OrderEmailLine[] = [];
   for (const item of order.items) {
-    const product = live.get(item.slug);
+    const product = live.products.get(item.slug);
     if (!product || product.availability === "sold-out") {
       return fail("unavailable", "Something in your bag is no longer available. We’ve updated your bag; please review it.");
     }
@@ -91,9 +94,13 @@ export async function POST(request: Request) {
       lineCents: toCents(product.price) * item.quantity,
     });
   }
-  const totalCents = lines.reduce((sum, l) => sum + l.lineCents, 0);
-  if (totalCents !== order.expectedTotalCents) {
-    return fail("changed", "Some prices changed since you opened your bag. We’ve updated it; please review the total.");
+  const pricing = computePricing(
+    order.items.map((item, i) => ({ slug: item.slug, quantity: item.quantity, unitCents: lines[i].lineCents / item.quantity })),
+    live.offers,
+    toCents(live.deliveryFee),
+  );
+  if (pricing.totalCents !== order.expectedTotalCents) {
+    return fail("changed", "Some prices, offers or the delivery fee changed since you opened your bag. We’ve updated it; please review the total.");
   }
 
   const { formatMoney } = createFormatters(settings.currency, settings.locale);
@@ -102,7 +109,7 @@ export async function POST(request: Request) {
     reference,
     customer: order.customer,
     lines,
-    totalCents,
+    pricing,
     formatMoney,
   });
 

@@ -1,14 +1,18 @@
 import { CogIcon } from "@sanity/icons/Cog";
 import { EyeClosedIcon } from "@sanity/icons/EyeClosed";
 import { PackageIcon } from "@sanity/icons/Package";
+import { SparklesIcon } from "@sanity/icons/Sparkles";
 import { StarIcon } from "@sanity/icons/Star";
 import { TagIcon } from "@sanity/icons/Tag";
+import { TagsIcon } from "@sanity/icons/Tags";
 import type { StructureResolver } from "sanity/structure";
+import { OFFERS_ID } from "./schemaTypes/offersSection";
+import { SALE_ID } from "./schemaTypes/saleSection";
 import { SHOP_SETTINGS_ID } from "./schemaTypes/shopSettings";
 
 /**
- * The dashboard's left-hand navigation: Products, Collections, Shop Settings.
- * Shop Settings opens the single settings document directly (no list, no "create new").
+ * The dashboard's left-hand navigation: Products, Collections, Sale, Offers, Shop Settings.
+ * Sale, Offers and Shop Settings each open their single document directly (no list, no "create new").
  */
 export const structure: StructureResolver = (S) =>
   S.list()
@@ -39,6 +43,15 @@ export const structure: StructureResolver = (S) =>
         .title("Collections")
         .icon(TagIcon)
         .child(S.documentTypeList("collection").title("Collections")),
+      S.divider(),
+      S.listItem()
+        .title("Sale")
+        .icon(TagsIcon)
+        .child(S.document().schemaType("saleSection").documentId(SALE_ID).title("Sale")),
+      S.listItem()
+        .title("Offers")
+        .icon(SparklesIcon)
+        .child(S.document().schemaType("offersSection").documentId(OFFERS_ID).title("Offers")),
       S.divider(),
       S.listItem()
         .title("Shop Settings")

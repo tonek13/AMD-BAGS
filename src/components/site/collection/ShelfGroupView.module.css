@@ -1,0 +1,30 @@
+.group + .group {
+  margin-top: clamp(2.4rem, 5vw, 3.6rem);
+}
+
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1rem;
+  margin-bottom: 1.2rem;
+}
+
+.title {
+  font-family: var(--font-display);
+  font-size: clamp(1.5rem, 3vw, 2.1rem);
+  font-weight: 560;
+  font-variation-settings: "SOFT" 80;
+  letter-spacing: -0.01em;
+  line-height: 1.1;
+}
+
+.rule {
+  padding: 0.3rem 0.8rem;
+  border-radius: 999px;
+  background: var(--burgundy);
+  color: var(--ivory);
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}

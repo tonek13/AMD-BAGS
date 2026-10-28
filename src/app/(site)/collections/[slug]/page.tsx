@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getCatalog, getShopSettings } from "@/lib/catalog";
-import { selectSections } from "@/lib/selectors";
+import { selectShelves } from "@/lib/selectors";
 import { Customize } from "@/components/site/Customize";
 import { Footer } from "@/components/site/Footer";
 import { SectionPage } from "@/components/site/SectionPage";
@@ -20,32 +20,39 @@ type Props = { params: Promise<{ slug: string }> };
 
 /** One page per collection that has "Show as its own section" switched on. */
 export async function generateStaticParams() {
-  const { products, categories } = await getCatalog();
-  const slugs = selectSections(products, categories).map((s) => ({ slug: s.category.id }));
+  const catalog = await getCatalog();
+  const slugs = selectShelves(catalog)
+    .filter((s) => s.kind === "collection")
+    .map((s) => ({ slug: s.id }));
   return slugs.length > 0 ? slugs : [{ slug: NO_SHELVES_YET }];
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  const { products, categories } = await getCatalog();
-  const section = selectSections(products, categories).find((s) => s.category.id === slug);
-  if (!section) return { title: "Not found" };
+  const shelf = selectShelves(await getCatalog()).find((s) => s.kind === "collection" && s.id === slug);
+  if (!shelf) return { title: "Not found" };
   return {
-    title: section.category.label,
-    description: `${section.category.label}: hand-crocheted bags, made slowly in small batches.`,
+    title: shelf.title,
+    description: `${shelf.title}: hand-crocheted bags, made slowly in small batches.`,
   };
 }
 
 export default async function CollectionPage({ params }: Props) {
   const { slug } = await params;
-  const [{ products, categories }, settings] = await Promise.all([getCatalog(), getShopSettings()]);
-  const sections = selectSections(products, categories);
-  const section = sections.find((s) => s.category.id === slug);
-  if (!section) notFound();
+  const [catalog, settings] = await Promise.all([getCatalog(), getShopSettings()]);
+  const shelves = selectShelves(catalog);
+  const shelf = shelves.find((s) => s.kind === "collection" && s.id === slug);
+  if (!shelf) notFound();
 
   return (
     <>
-      <SectionPage section={section} others={sections.filter((s) => s !== section)} />
+      <SectionPage
+        kicker="The shelf"
+        title={shelf.title}
+        blurb={`${shelf.products.length} ${shelf.products.length === 1 ? "bag" : "bags"}, each one hooked by hand.`}
+        groups={shelf.groups}
+        others={shelves.filter((s) => s !== shelf)}
+      />
       <Customize settings={settings} />
       <Footer settings={settings} />
     </>

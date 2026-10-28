@@ -4,6 +4,7 @@ import { useState } from "react";
 import Image from "next/image";
 import type { Product } from "@/types/catalog";
 import { AvailabilityBadge } from "./AvailabilityBadge";
+import { Price } from "./Price";
 import { ModalDialog } from "./ModalDialog";
 import { QuantityStepper } from "./QuantityStepper";
 import { useShop } from "./shop-context";
@@ -128,7 +129,9 @@ function ProductDetails({ product, onClose }: { product: Product; onClose: () =>
         <h2 className={`display ${styles.name}`}>{product.name}</h2>
 
         <div className={styles.priceRow}>
-          <p className={styles.price}>{formatPrice(product.price)}</p>
+          <p className={styles.price}>
+            <Price product={product} formatPrice={formatPrice} />
+          </p>
           <AvailabilityBadge availability={product.availability} />
         </div>
 

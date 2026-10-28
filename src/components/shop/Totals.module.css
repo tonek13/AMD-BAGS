@@ -1,0 +1,50 @@
+.totals {
+  display: grid;
+  gap: 0.45rem;
+  margin: 0;
+}
+
+.row,
+.total {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1rem;
+}
+
+.row {
+  font-size: 0.95rem;
+}
+
+.row dt {
+  color: var(--ink-soft);
+}
+
+.row dd,
+.total dd {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.offer dt,
+.offer dd {
+  color: var(--burgundy);
+  font-weight: 650;
+}
+
+.offer dt span {
+  font-weight: 500;
+}
+
+.total {
+  margin-top: 0.3rem;
+  padding-top: 0.7rem;
+  border-top: 1px dashed var(--line);
+  font-size: 1.05rem;
+}
+
+.total dd {
+  font-family: var(--font-display);
+  font-size: 1.8rem;
+  font-weight: 600;
+}

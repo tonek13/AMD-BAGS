@@ -14,7 +14,7 @@ import { TAGS_BY_TYPE } from "@/sanity/tags";
  * Webhook setup (Sanity → API → Webhooks), see docs/SANITY-SETUP.md:
  *   URL         https://<your-domain>/api/revalidate
  *   Trigger on  Create, Update, Delete
- *   Filter      _type in ["product", "collection", "shopSettings"]
+ *   Filter      _type in ["product", "collection", "shopSettings", "saleSection", "offersSection"]
  *   Projection  {_type, _id}
  *   Method      POST        Drafts: off        Secret: same value as SANITY_REVALIDATE_SECRET
  */

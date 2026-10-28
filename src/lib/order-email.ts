@@ -1,5 +1,6 @@
 import "server-only";
 import type { OrderCustomer } from "@/lib/orders";
+import type { Pricing } from "@/lib/pricing";
 
 export interface OrderEmailLine {
   name: string;
@@ -13,7 +14,8 @@ export interface OrderEmailInput {
   reference: string;
   customer: OrderCustomer;
   lines: OrderEmailLine[];
-  totalCents: number;
+  /** Subtotal, offers, delivery fee and the total to collect. */
+  pricing: Pricing;
   /** Always two decimals, in the shop currency. */
   formatMoney: (amount: number) => string;
 }
@@ -31,9 +33,10 @@ function esc(value: string): string {
 const multiline = (value: string) => esc(value).replace(/\n/g, "<br>");
 
 /** Subject, HTML and plain-text bodies for the owner's "new order" email. */
-export function buildOrderEmail({ brandName, reference, customer, lines, totalCents, formatMoney }: OrderEmailInput) {
+export function buildOrderEmail({ brandName, reference, customer, lines, pricing, formatMoney }: OrderEmailInput) {
   const count = lines.reduce((n, l) => n + l.quantity, 0);
-  const total = formatMoney(totalCents / 100);
+  const total = formatMoney(pricing.totalCents / 100);
+  const hasExtras = pricing.discounts.length > 0 || pricing.deliveryCents > 0;
   const subject = `New order ${reference} · ${count} ${count === 1 ? "bag" : "bags"} · ${total} · ${customer.name}`.replace(/[\r\n]+/g, " ");
 
   const text = [
@@ -50,11 +53,19 @@ export function buildOrderEmail({ brandName, reference, customer, lines, totalCe
     "ORDER",
     ...lines.map((l) => `• ${l.quantity} × ${l.name} @ ${formatMoney(l.unitPrice)} = ${formatMoney(l.lineCents / 100)}`),
     "",
+    ...(hasExtras ? [`Subtotal: ${formatMoney(pricing.subtotalCents / 100)}`] : []),
+    ...pricing.discounts.map((d) => `Offer – ${d.title} (${d.units} free): -${formatMoney(d.cents / 100)}`),
+    ...(pricing.deliveryCents > 0 ? [`Delivery: ${formatMoney(pricing.deliveryCents / 100)}`] : []),
     `TOTAL TO COLLECT: ${total}`,
   ].join("\n");
 
   const row = (label: string, value: string) =>
     `<tr><td style="padding:6px 16px 6px 0;color:#7d5f19;font-size:12px;letter-spacing:.08em;text-transform:uppercase;vertical-align:top;white-space:nowrap">${label}</td><td style="padding:6px 0;font-size:15px;color:#231f20">${value}</td></tr>`;
+
+  const extraRow = (label: string, value: string, show: boolean) =>
+    show
+      ? `<tr><td style="padding:6px 0 0;font-size:14px;color:#3d3537">${label}</td><td style="padding:6px 0 0;font-size:14px;text-align:right;white-space:nowrap">${value}</td></tr>`
+      : "";
 
   const phoneHref = `tel:${customer.phone.replace(/[^\d+]/g, "")}`;
 
@@ -81,6 +92,9 @@ export function buildOrderEmail({ brandName, reference, customer, lines, totalCe
               `<tr><td style="padding:10px 0;border-bottom:1px dashed #e3d7c0;font-size:15px">${l.quantity} × ${esc(l.name)}<div style="font-size:12px;color:#6f6567">${esc(formatMoney(l.unitPrice))} each</div></td><td style="padding:10px 0;border-bottom:1px dashed #e3d7c0;font-size:15px;text-align:right;white-space:nowrap">${esc(formatMoney(l.lineCents / 100))}</td></tr>`,
           )
           .join("")}
+        ${extraRow("Subtotal", esc(formatMoney(pricing.subtotalCents / 100)), hasExtras)}
+        ${pricing.discounts.map((d) => extraRow(`Offer: ${esc(d.title)} (${d.units} free)`, `−${esc(formatMoney(d.cents / 100))}`, true)).join("")}
+        ${extraRow("Delivery", esc(formatMoney(pricing.deliveryCents / 100)), pricing.deliveryCents > 0)}
         <tr><td style="padding:14px 0 0;font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:#7d5f19">Total to collect</td><td style="padding:14px 0 0;font-size:22px;font-weight:700;text-align:right;white-space:nowrap">${esc(total)}</td></tr>
       </table>
     </td></tr>

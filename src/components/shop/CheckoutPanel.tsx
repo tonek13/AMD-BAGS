@@ -13,6 +13,8 @@ import {
   type OrderResponse,
 } from "@/lib/orders";
 import type { CartLineView } from "@/lib/cart-lines";
+import type { Pricing } from "@/lib/pricing";
+import { Totals } from "./Totals";
 import { useShop } from "./shop-context";
 import cart from "./CartDrawer.module.css";
 import styles from "./Checkout.module.css";
@@ -36,12 +38,14 @@ export interface PlacedOrder {
   name: string;
   phone: string;
   totalCents: number;
+  deliveryCents: number;
 }
 
 interface CheckoutPanelProps {
   /** The bags that will be ordered (sold-out and removed ones are already left out). */
   lines: CartLineView[];
-  totalCents: number;
+  /** Subtotal, offers, delivery fee and the total the customer pays. */
+  pricing: Pricing;
   values: OrderCustomer;
   onValuesChange: (next: OrderCustomer) => void;
   orderId: string;
@@ -54,7 +58,7 @@ interface CheckoutPanelProps {
 
 const FIELD_ORDER: (keyof OrderCustomer)[] = ["name", "phone", "city", "address", "notes"];
 
-export function CheckoutPanel({ lines, totalCents, values, onValuesChange, orderId, onBack, onClose, onPlaced, onNeedsReview }: CheckoutPanelProps) {
+export function CheckoutPanel({ lines, pricing, values, onValuesChange, orderId, onBack, onClose, onPlaced, onNeedsReview }: CheckoutPanelProps) {
   const { formatMoney, formatPrice, clearCart } = useShop();
   const [errors, setErrors] = useState<CustomerErrors>({});
   const [submitting, setSubmitting] = useState(false);
@@ -62,7 +66,7 @@ export function CheckoutPanel({ lines, totalCents, values, onValuesChange, order
   const honeypot = useRef<HTMLInputElement>(null);
   const form = useRef<HTMLFormElement>(null);
 
-  const total = formatMoney(fromCents(totalCents));
+  const total = formatMoney(fromCents(pricing.totalCents));
   const count = lines.reduce((n, l) => n + l.quantity, 0);
 
   function set(field: keyof OrderCustomer, value: string) {
@@ -92,7 +96,7 @@ export function CheckoutPanel({ lines, totalCents, values, onValuesChange, order
       orderId,
       items: lines.map((l) => ({ slug: l.slug, quantity: l.quantity })),
       customer,
-      expectedTotalCents: totalCents,
+      expectedTotalCents: pricing.totalCents,
       website: honeypot.current?.value ?? "",
     };
 
@@ -109,7 +113,7 @@ export function CheckoutPanel({ lines, totalCents, values, onValuesChange, order
 
       if (result?.ok) {
         clearCart();
-        onPlaced({ reference: result.reference, name: customer.name, phone: customer.phone, totalCents });
+        onPlaced({ reference: result.reference, name: customer.name, phone: customer.phone, totalCents: pricing.totalCents, deliveryCents: pricing.deliveryCents });
         return;
       }
       if (result && !result.ok) {
@@ -208,9 +212,8 @@ export function CheckoutPanel({ lines, totalCents, values, onValuesChange, order
               );
             })}
           </ul>
-          <div className={styles.totalRow}>
-            <span>Total</span>
-            <strong>{total}</strong>
+          <div className={styles.totalsWrap}>
+            <Totals pricing={pricing} />
           </div>
         </section>
 

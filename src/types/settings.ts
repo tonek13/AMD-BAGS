@@ -16,6 +16,8 @@ export interface ShopSettings {
   /** International format. Empty when the owner has not entered one: the WhatsApp contact is then hidden. Not used for orders (they are emailed). */
   whatsappNumber: string;
   contact: { email: string; location: string };
+  /** Added to every order at checkout, in the shop currency. 0 means free delivery. */
+  deliveryFee: number;
   socialLinks: SocialLink[];
   /** Homepage headline, one entry per line; the last line is set in italics. */
   heroHeadline: string[];

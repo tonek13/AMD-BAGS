@@ -1,6 +1,7 @@
-import type { Availability, Product } from "@/types/catalog";
+import type { Availability, Offer, Product } from "@/types/catalog";
 import type { StoredLine } from "@/lib/cart-store";
 import { toCents } from "@/lib/format";
+import { computePricing, type Pricing } from "@/lib/pricing";
 
 /**
  * How one line of the bag stands right now:
@@ -67,10 +68,17 @@ export function computeLines(stored: readonly StoredLine[], products: Product[],
   });
 }
 
+/** What the bag costs: the orderable lines, less any offers, plus the delivery fee (major currency units in, cents out). */
+export function priceLines(lines: readonly CartLineView[], offers: Offer[], deliveryFee: number): Pricing {
+  const orderable = lines.filter((l) => l.available).map((l) => ({ slug: l.slug, quantity: l.quantity, unitCents: toCents(l.unitPrice) }));
+  return computePricing(orderable, offers, toCents(deliveryFee));
+}
+
 export interface CartNotice {
   slug: string;
   name: string;
-  kind: "removed" | "sold-out" | "price";
+  /** "terms": no bag changed, but the delivery fee or an offer did. */
+  kind: "removed" | "sold-out" | "price" | "terms";
   from?: number;
   to?: number;
 }

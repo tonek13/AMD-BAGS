@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { navLinks } from "@/config/site";
-import { selectSections } from "@/lib/selectors";
+import { selectShelves } from "@/lib/selectors";
 import { scrollToTarget } from "@/lib/scroll";
 import { Customize } from "@/components/site/Customize";
 import { ModalDialog } from "./ModalDialog";
@@ -11,8 +11,8 @@ import styles from "./MenuDrawer.module.css";
 
 /** The menu behind the three-line button: every collection that has its own section, plus the main places on the site. */
 export function MenuDrawer() {
-  const { menuOpen, menuPath, closeMenu, products, categories, settings } = useShop();
-  const sections = selectSections(products, categories);
+  const { menuOpen, menuPath, closeMenu, products, categories, sale, offersSection, settings } = useShop();
+  const shelves = selectShelves({ products, categories, sale, offers: offersSection });
 
   // Links to a spot on the homepage: scroll there when already on it, otherwise navigate (the browser lands on the anchor).
   function onHomeAnchor(e: React.MouseEvent<HTMLAnchorElement>, hash: string) {
@@ -36,20 +36,15 @@ export function MenuDrawer() {
         </header>
 
         <nav className={styles.body} aria-label="Menu">
-          {sections.length > 0 && (
+          {shelves.length > 0 && (
             <>
               <p className={`eyebrow ${styles.group}`}>Shop by shelf</p>
               <ul className={styles.list}>
-                {sections.map(({ category, products: inSection }) => (
-                  <li key={category.id}>
-                    <Link
-                      href={`/collections/${category.id}`}
-                      className={styles.item}
-                      aria-current={menuPath === `/collections/${category.id}` ? "page" : undefined}
-                      onClick={closeMenu}
-                    >
-                      <span className={styles.itemName}>{category.label}</span>
-                      <span className={styles.itemCount}>{inSection.length}</span>
+                {shelves.map((shelf) => (
+                  <li key={shelf.id}>
+                    <Link href={shelf.href} className={styles.item} aria-current={menuPath === shelf.href ? "page" : undefined} onClick={closeMenu}>
+                      <span className={styles.itemName}>{shelf.title}</span>
+                      <span className={styles.itemCount}>{shelf.products.length}</span>
                       <Arrow />
                     </Link>
                   </li>

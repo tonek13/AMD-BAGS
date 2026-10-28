@@ -6,10 +6,11 @@ import { Flip, gsap, registerGsap, ScrollTrigger } from "@/lib/gsap";
 import { useIsomorphicLayoutEffect } from "@/lib/hooks";
 import { prefersReducedMotion } from "@/lib/scroll";
 import { useShop } from "@/components/shop/shop-context";
-import { selectSections, selectUnsectioned } from "@/lib/selectors";
+import { selectSections, selectShelves, selectUnsectioned, type Shelf as ShelfData } from "@/lib/selectors";
 import { FilterPanel } from "./collection/FilterPanel";
 import { ProductGrid } from "./collection/ProductGrid";
 import { Shelf } from "./collection/Shelf";
+import { ShelfGroupView } from "./collection/ShelfGroupView";
 import { Swatch } from "./collection/Swatch";
 import {
   activeFilterCount,
@@ -33,7 +34,7 @@ interface Chip {
 }
 
 export function Collection({ products }: { products: Product[] }) {
-  const { categories, colors, settings } = useShop();
+  const { categories, colors, settings, sale, offersSection } = useShop();
   const [filters, setFilters] = useState<FilterState>(emptyFilters);
   const [sort, setSort] = useState<SortKey>("featured");
   const [density, setDensity] = useState<Density>("standard");
@@ -43,16 +44,16 @@ export function Collection({ products }: { products: Product[] }) {
   const flipState = useRef<ReturnType<typeof Flip.getState> | null>(null);
 
   const sorted = useMemo(() => sortProducts(products, sort), [products, sort]);
-  // Collections with "Show as its own section" get a shelf each; every other bag goes on a final "More bags" shelf.
-  const sections = useMemo(() => selectSections(sorted, categories), [sorted, categories]);
-  const unsectioned = useMemo(() => selectUnsectioned(sorted, sections), [sorted, sections]);
-  const shelfList = useMemo(
-    () => [
-      ...sections.map((s) => ({ id: s.category.id, title: s.category.label, href: `/collections/${s.category.id}`, products: s.products })),
-      ...(sections.length > 0 && unsectioned.length > 0 ? [{ id: "more-bags", title: "More bags", href: undefined, products: unsectioned }] : []),
-    ],
-    [sections, unsectioned],
-  );
+  // The Sale shelf, the Offers shelf and a shelf for each collection with "Show as its own section" (when switched on);
+  // every other bag goes on a final "More bags" shelf (or "All bags" when there are no collection shelves).
+  const promoShelves = useMemo(() => selectShelves({ products: sorted, categories, sale, offers: offersSection }), [sorted, categories, sale, offersSection]);
+  const unsectioned = useMemo(() => selectUnsectioned(sorted, selectSections(sorted, categories)), [sorted, categories]);
+  const shelfList = useMemo<ShelfData[]>(() => {
+    if (promoShelves.length === 0) return [];
+    if (unsectioned.length === 0) return promoShelves;
+    const title = promoShelves.some((s) => s.kind === "collection") ? "More bags" : "All bags";
+    return [...promoShelves, { id: "more-bags", kind: "collection", title, href: "", products: unsectioned, groups: [{ id: "more-bags", products: unsectioned }] }];
+  }, [promoShelves, unsectioned]);
   const isHidden = (p: Product) => !matchesFilters(p, filters);
   const visibleCount = products.filter((p) => matchesFilters(p, filters)).length;
   const active = activeFilterCount(filters);
@@ -255,8 +256,10 @@ export function Collection({ products }: { products: Product[] }) {
             shelfList.map((shelf, i) => {
               const shown = shelf.products.filter((p) => !isHidden(p)).length;
               return (
-                <Shelf key={shelf.id} id={`shelf-${shelf.id}`} index={i + 1} title={shelf.title} count={shown} href={shelf.href} empty={shown === 0}>
-                  <ProductGrid products={shelf.products} density={density} isHidden={isHidden} />
+                <Shelf key={shelf.id} id={`shelf-${shelf.id}`} index={i + 1} title={shelf.title} count={shown} href={shelf.href || undefined} empty={shown === 0}>
+                  {shelf.groups.map((group) => (
+                    <ShelfGroupView key={group.id} group={group} density={density} isHidden={isHidden} />
+                  ))}
                 </Shelf>
               );
             })
