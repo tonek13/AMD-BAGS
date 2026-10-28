@@ -8,6 +8,7 @@ import { buildOrderEmail, type OrderEmailLine } from "@/lib/order-email";
 import { ORDER_LIMITS, orderReference, parseOrderRequest, type OrderErrorCode, type OrderResponse } from "@/lib/orders";
 import { computePricing } from "@/lib/pricing";
 import { tooManyRequests } from "@/lib/rate-limit";
+import { clientIp, declaredLength, isCrossSiteRequest, isJsonRequest } from "@/lib/request-guard";
 
 /**
  * Places an order: checks it against the live shop, then emails it to the shop owner (Resend).
@@ -20,6 +21,9 @@ const NO_STORE = { "Cache-Control": "no-store" };
 
 const STATUS: Record<OrderErrorCode, number> = {
   invalid: 400,
+  forbidden: 403,
+  unsupported: 415,
+  "too-large": 413,
   changed: 409,
   unavailable: 409,
   "rate-limited": 429,
@@ -33,8 +37,21 @@ function fail(code: OrderErrorCode, message: string, fields?: Extract<OrderRespo
 }
 
 export async function POST(request: Request) {
+  // Cheap checks first, before anything is read or any limit is spent.
+  if (isCrossSiteRequest(request)) return fail("forbidden", "This request did not come from the shop.");
+  if (!isJsonRequest(request)) return fail("unsupported", "Expected a JSON order.");
+  const declared = declaredLength(request);
+  if (declared !== null && declared > ORDER_LIMITS.maxBodyBytes) return fail("too-large", "That order is too large.");
+
+  const ip = clientIp(request);
+  // Every attempt counts, valid or not, so a flood of junk cannot keep the server busy for free.
+  const limit = Number(process.env.ORDER_RATE_LIMIT_MAX) || 8;
+  if (tooManyRequests(`order-attempt:${ip}`, Math.max(30, limit * 4), 10 * 60_000)) {
+    return fail("rate-limited", "Too many attempts. Please wait a few minutes and try again.");
+  }
+
   const raw = await request.text();
-  if (raw.length > ORDER_LIMITS.maxBodyBytes) return fail("invalid", "That order is too large.");
+  if (raw.length > ORDER_LIMITS.maxBodyBytes) return fail("too-large", "That order is too large.");
 
   let body: unknown;
   try {
@@ -51,10 +68,10 @@ export async function POST(request: Request) {
   // The honeypot field is invisible to people. A bot that filled it gets a convincing "thank you" and nothing is sent.
   if (order.website) return NextResponse.json({ ok: true, reference } satisfies OrderResponse, { headers: NO_STORE });
 
-  const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
-  // 8 orders per address per 10 minutes (ORDER_RATE_LIMIT_MAX raises it; the tests do).
-  const rateLimit = Number(process.env.ORDER_RATE_LIMIT_MAX) || 8;
-  if (tooManyRequests(`order:${ip}`, rateLimit, 10 * 60_000)) {
+  // 8 orders per address per 10 minutes, and 8 per phone number per hour, so rotating addresses does not help
+  // (ORDER_RATE_LIMIT_MAX changes the 8; the tests raise it).
+  const phoneDigits = order.customer.phone.replace(/\D/g, "");
+  if (tooManyRequests(`order:${ip}`, limit, 10 * 60_000) || tooManyRequests(`order-phone:${phoneDigits}`, limit, 60 * 60_000)) {
     return fail("rate-limited", "Too many attempts. Please wait a few minutes and try again.");
   }
 

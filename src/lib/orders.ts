@@ -46,6 +46,9 @@ export interface OrderRequest {
 
 export type OrderErrorCode =
   | "invalid" // the form data is not acceptable
+  | "forbidden" // another website tried to place the order
+  | "unsupported" // not a JSON request
+  | "too-large" // the body is far bigger than any real order
   | "changed" // prices differ from what the customer saw
   | "unavailable" // a bag is sold out or gone
   | "rate-limited"

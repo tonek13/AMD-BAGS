@@ -3,6 +3,8 @@
 Next.js (App Router) + TypeScript, custom CSS Modules, GSAP + ScrollTrigger, Lenis smooth scrolling on desktop.
 The owner manages the catalogue in **Sanity Studio**, embedded at `/studio`. No customer accounts, no online payment: customers check out with name, phone and address and pay cash on delivery; each order is emailed to the owner with [Resend](https://resend.com).
 
+**Security (headers, rate limits, what to switch on in Vercel/Sanity)?** Read [docs/SECURITY.md](docs/SECURITY.md).
+
 **Owner?** Read [docs/OWNER-GUIDE.md](docs/OWNER-GUIDE.md). **Connecting Sanity (account steps, webhook, CORS, invites)?** Read [docs/SANITY-SETUP.md](docs/SANITY-SETUP.md).
 
 ## Run it

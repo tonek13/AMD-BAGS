@@ -338,7 +338,7 @@ try {
   // ── D3. placing an order ───────────────────────────────────────────────
   console.log("\nOrders (checked on the server, then emailed to the owner)");
   check("GET /api/orders is not allowed (405)", (await fetch(`${APP}/api/orders`)).status === 405);
-  const notJson = await fetch(`${APP}/api/orders`, { method: "POST", body: "nope" });
+  const notJson = await fetch(`${APP}/api/orders`, { method: "POST", headers: { "content-type": "application/json" }, body: "nope" });
   check("rejects a body that is not JSON (400)", notJson.status === 400);
   let order = await placeOrder({ customer: { name: "", phone: "abc", city: "", address: "x", notes: "" } });
   check(
@@ -471,6 +471,43 @@ try {
   let limited = false;
   for (let i = 0; i < 50 && !limited; i++) limited = (await placeOrder()).status === 429;
   check("too many orders from one address are slowed down (429)", limited);
+
+  // ── D5. security headers and request checks ────────────────────────────
+  console.log("\nSecurity headers and request checks");
+  const header = (response, name) => response.headers.get(name) ?? "";
+  const shopResponse = await fetch(`${APP}/`);
+  const csp = header(shopResponse, "content-security-policy");
+  check(
+    "the shop sends a Content Security Policy: own scripts only, no plugins, no framing, forms stay on the site",
+    /default-src 'self'/.test(csp) && /object-src 'none'/.test(csp) && /frame-ancestors 'none'/.test(csp) && /form-action 'self'/.test(csp) && /base-uri 'self'/.test(csp) && !/script-src[^;]*https?:/.test(csp) && /upgrade-insecure-requests/.test(csp),
+    csp,
+  );
+  check("the shop sends nosniff, a referrer policy, HSTS and a permissions policy", header(shopResponse, "x-content-type-options") === "nosniff" && /strict-origin/.test(header(shopResponse, "referrer-policy")) && /max-age=\d{7,}/.test(header(shopResponse, "strict-transport-security")) && /camera=\(\)/.test(header(shopResponse, "permissions-policy")));
+  check("the shop cannot be framed and isolates its window", header(shopResponse, "x-frame-options") === "DENY" && header(shopResponse, "cross-origin-opener-policy") === "same-origin");
+  check("the framework is not announced (no X-Powered-By)", !shopResponse.headers.has("x-powered-by"));
+  check("section pages carry the same policy", /default-src 'self'/.test(header(await fetch(`${APP}/sale`), "content-security-policy")));
+  const studioResponse = await fetch(`${APP}/studio`);
+  const studioCsp = header(studioResponse, "content-security-policy");
+  check("the Studio cannot be framed by other sites and is kept out of search", studioCsp === "frame-ancestors 'self'" && header(studioResponse, "x-frame-options") === "SAMEORIGIN" && /noindex/.test(header(studioResponse, "x-robots-tag")));
+  check("the Studio is not given the shop's strict policy (it needs Sanity's own scripts)", !/default-src/.test(studioCsp) && !header(studioResponse, "cross-origin-opener-policy"));
+  const apiResponse = await fetch(`${APP}/api/orders`);
+  check("API answers carry the protections too", header(apiResponse, "x-content-type-options") === "nosniff" && /default-src 'self'/.test(header(apiResponse, "content-security-policy")));
+
+  const post = (path, headers, body = "{}") => fetch(`${APP}${path}`, { method: "POST", headers: { "content-type": "application/json", ...headers }, body });
+  check("an order sent by another website is refused (cross-site, 403)", (await post("/api/orders", { "sec-fetch-site": "cross-site" })).status === 403);
+  check("an order from a page on another address is refused (Origin mismatch, 403)", (await post("/api/orders", { origin: "https://evil.example" })).status === 403);
+  check("the shop's own pages are accepted (Origin matches)", (await post("/api/orders", { origin: APP, "sec-fetch-site": "same-origin" })).status === 400);
+  check("a plain-text body, which another site can send, is refused (415)", (await post("/api/orders", { "content-type": "text/plain" })).status === 415);
+  check("an enormous body is refused before it is read (413)", (await post("/api/orders", {}, JSON.stringify({ filler: "x".repeat(40_000) }))).status === 413);
+  check("the cart check refuses other websites too (403)", (await post("/api/catalog/check", { origin: "https://evil.example" }, JSON.stringify({ slugs: [] }))).status === 403);
+
+  // the cart check reads live shop data, so it is limited per visitor
+  let checkLimited = null;
+  for (let i = 0; i < 90 && !checkLimited; i++) {
+    const r = await post("/api/catalog/check", {}, JSON.stringify({ slugs: ["bordeaux-clutch"] }));
+    if (r.status === 429) checkLimited = r;
+  }
+  check("the cart check slows down a visitor who hammers it (429 with Retry-After)", !!checkLimited && header(checkLimited, "retry-after") === "60");
 
   // ── E. the Studio is separate from the storefront ──────────────────────
   console.log("\nStudio route");
