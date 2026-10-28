@@ -479,7 +479,7 @@ try {
   const csp = header(shopResponse, "content-security-policy");
   check(
     "the shop sends a Content Security Policy: own scripts only, no plugins, no framing, forms stay on the site",
-    /default-src 'self'/.test(csp) && /object-src 'none'/.test(csp) && /frame-ancestors 'none'/.test(csp) && /form-action 'self'/.test(csp) && /base-uri 'self'/.test(csp) && !/script-src[^;]*https?:/.test(csp) && /upgrade-insecure-requests/.test(csp),
+    /default-src 'self'/.test(csp) && /object-src 'none'/.test(csp) && /frame-ancestors 'none'/.test(csp) && /form-action 'self'/.test(csp) && /base-uri 'self'/.test(csp) && !/script-src[^;]*https?:/.test(csp),
     csp,
   );
   check("the shop sends nosniff, a referrer policy, HSTS and a permissions policy", header(shopResponse, "x-content-type-options") === "nosniff" && /strict-origin/.test(header(shopResponse, "referrer-policy")) && /max-age=\d{7,}/.test(header(shopResponse, "strict-transport-security")) && /camera=\(\)/.test(header(shopResponse, "permissions-policy")));

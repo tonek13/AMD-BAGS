@@ -46,7 +46,9 @@ const shopCsp = [
   "base-uri 'self'",
   "form-action 'self'",
   "frame-ancestors 'none'",
-  ...(isDev ? [] : ["upgrade-insecure-requests"]),
+  // Only where the site is served over https (Vercel). Locally the site runs over plain http, and a phone on your
+  // network opening http://192.168.x.x:3000 would break if the browser tried to upgrade every request to https.
+  ...(process.env.VERCEL ? ["upgrade-insecure-requests"] : []),
 ].join("; ");
 
 /** Headers every page gets (the shop and the Studio). */
